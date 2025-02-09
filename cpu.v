@@ -56,6 +56,7 @@ wire [31:0] rs1_data_s, rs2_data_s;
 wire [2:0]  imm_select_s;
 wire [3:0]  alu_op_s;
 wire jmp_addr_op1_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s;
+reg hazard_nop_s;
 // Pipeline register
 reg  [31:0] immediate_ex_r, instr_addr_ex_r, rs1_data_ex_r, rs2_data_ex_r;
 reg  [3:0]  alu_op_ex_r;
@@ -119,7 +120,7 @@ assign instr_addr_s = (instr_addr_src_s == 1'd0) ? next_instr_addr_s : jmp_addr_
 always @(posedge clk_i) begin
 	if(rst_i == 1'd0) begin
 		instr_addr_r <= 32'd0;	
-	end else if (mem_ready_s) begin
+	end else if (mem_ready_s && hazard_nop_s==1'b0) begin
 		instr_addr_r <= instr_addr_s;
 	end
 end
@@ -134,7 +135,7 @@ always @(posedge clk_i) begin
 	if (rst_i == 1'd0) begin
     	instr_addr_id_r <= 32'd0;
 		instr_id_r      <= 32'd0;
-	end else if (mem_ready_s) begin
+	end else if (mem_ready_s && hazard_nop_s==1'b0) begin
 		instr_addr_id_r <= instr_addr_r;
 		instr_id_r      <= instruction_s;
 	end
@@ -182,23 +183,39 @@ control_unit inst_control_unit(
 assign tmp_immediate_s = instr_id_r[31:7];
 always @(*) begin
   	case(imm_select_s)
-        // I immediate_s
+        // I immediate
   		3'b000 : immediate_s = {{20{tmp_immediate_s[24]}},tmp_immediate_s[24:13]};	
-        // S immediate_s
+        // S immediate
 	  	3'b001 : immediate_s = {{20{tmp_immediate_s[24]}},tmp_immediate_s[24:18],tmp_immediate_s[4:0]};
-        // SB immediate_s
+        // SB immediate
 	  	3'b010 : immediate_s = {{20{tmp_immediate_s[24]}},tmp_immediate_s[24],tmp_immediate_s[0],tmp_immediate_s[23:18],tmp_immediate_s[4:1]};
-        // U immediate_s
+        // U immediate
         3'b011 : immediate_s = {{tmp_immediate_s[24:5]},12'd0};
-        // UJ immediate_s
+        // UJ immediate
 	  	3'b100 : immediate_s = {{12{tmp_immediate_s[24]}},tmp_immediate_s[24],tmp_immediate_s[12:5],tmp_immediate_s[13],tmp_immediate_s[23:14]};
         default : immediate_s = 32'd0;
 	endcase
 end
-			
-// IX-EX pipeline register
+
+// Hazard detection
+always @(*) begin
+	hazard_nop_s = 1'b0;
+	// If read from data memory
+	if (mem_read_ex_r == 1'b1) begin
+		// If destination register is one that must be read now
+		if (inst_ex_r[11:7] == instr_id_r[19:15] ||
+			inst_ex_r[11:7] == instr_id_r[24:20]) begin
+			// Insert NOP
+			hazard_nop_s = 1'b1;
+		end
+	end
+end
+
+
+// ID-EX pipeline register
 always @(posedge clk_i) begin
-	if ((rst_bubble_s & rst_bubble_r & rst_i) == 1'd0) begin
+	if ((rst_bubble_s & rst_bubble_r & rst_i) == 1'd0 ||
+		(hazard_nop_s == 1'b1 && mem_ready_s == 1'b1)) begin
 		inst_ex_r       <= 25'd0;
 		instr_addr_ex_r <= 32'd0;
 		rs1_data_ex_r   <= 32'd0;
