@@ -1,7 +1,7 @@
 module alu (
 	input signed [31:0] op1_i,
     input signed [31:0] op2_i, 
-	input [3:0] alu_ctrl_i, 
+	input [4:0] alu_ctrl_i, 
 	
 	output reg [31:0] data_o,
 	output reg Zero_o
@@ -13,42 +13,64 @@ always @(*) begin
 
 	case(alu_ctrl_i)
         // addi, li, mv, add, lw, sw
-		4'b0000 : data_o = op1_i + op2_i;
+		5'd0 : data_o = op1_i + op2_i;
 					  
-        // slli
-		4'b0001 : data_o = op1_i << op2_i[4:0];
+        // sll, slli
+		5'd1 : data_o = op1_i << op2_i[4:0];
 
-        // srai	
-        4'b0010 : data_o = op1_i >>> op2_i[4:0];
+        // sra, srai	
+        5'd2 : data_o = op1_i >>> op2_i[4:0];
 
         // sub 
-		4'b0011 : data_o = op1_i - op2_i;
+		5'd3 : data_o = op1_i - op2_i;
 
         // xor 
-		4'b0100 : data_o = op1_i ^ op2_i;
+		5'd4 : data_o = op1_i ^ op2_i;
 
         // jal, j, ret
-        4'b0101 : begin 
+        5'd5 : begin 
             data_o = op1_i + 32'd4;
             Zero_o = 1'b1;
 		end
 
         // lui
-		4'b0110 : data_o = op2_i;
-
-        // ble
-		4'b0111 : begin	
-			if (op2_i <= op1_i) begin
-				Zero_o = 1'b1;
-			end
-		end
+		5'd6 : data_o = op2_i;
+	
+		// bge
+		5'd7 : Zero_o = (op1_i >= op2_i) ? 1'b1 : 1'b0;
 		
         // bne
-		4'b1000 : begin
-			if (op1_i != op2_i) begin
-				Zero_o = 1'b1;
-			end
-		end
+		5'd8 : Zero_o = (op1_i != op2_i) ? 1'b1 : 1'b0;
+
+		// or
+		5'd9 : data_o = op1_i | op2_i;
+
+		// and
+		5'd10 : data_o = op1_i & op2_i;
+
+		// srl	
+        5'd11 : data_o = op1_i >> op2_i[4:0];
+
+		// slt	
+        5'd12 : data_o = (op1_i<op2_i) ? 32'd1 : 32'd0;
+
+		// sltu
+        5'd13 : data_o = ($unsigned(op1_i)<$unsigned(op2_i)) ? 32'd1 : 32'd0;
+
+		// beq
+		5'd14 : Zero_o = (op1_i == op2_i) ? 1'b1 : 1'b0;
+
+		// blt
+		5'd15 : Zero_o = (op1_i < op2_i) ? 1'b1 : 1'b0;
+
+		// bltu
+		5'd16 : Zero_o = ($unsigned(op1_i) < $unsigned(op2_i)) ? 1'b1 : 1'b0;
+
+		// bgeu
+		5'd17 : Zero_o = ($unsigned(op1_i) >= $unsigned(op2_i)) ? 1'b1 : 1'b0;
+
+		default : begin
+        end
 	endcase
 end
 

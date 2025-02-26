@@ -14,7 +14,8 @@ module cpu (
 	output [31:0] data_mem_addr_o,
 	output [31:0] data_mem_data_o,
 	output data_mem_rd_o,
-	output data_mem_wr_o
+	output data_mem_wr_o,
+	output [3:0] byte_select_o
 );
 
 
@@ -69,7 +70,7 @@ reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, m
 // ALU
 reg  [31:0] op1_alu_s, op2_alu_s;
 wire [31:0] alu_result_s;
-wire [3:0]  alu_ctrl_s;
+wire [4:0]  alu_ctrl_s;
 wire zero_s;
 // Jump
 reg  [31:0] op1_jump_addr_s;
@@ -80,6 +81,7 @@ reg  [1:0] forward_op1_sel_s, forward_op2_sel_s;
 reg  [31:0] alu_result_mem_r, rs2_data_mem_r;
 reg  [4:0] rd_addr_mem_r;
 reg zero_mem_r, reg_write_mem_r, mem_to_reg_mem_r, branch_mem_r, mem_read_mem_r, mem_write_mem_r;
+reg  [2:0] funct_3_mem_r;
 
 /* ---------------------------------------------------
 * Related to Memory (MEM) Pipeline Section
@@ -328,7 +330,8 @@ always @(posedge clk_i) begin
 		reg_write_mem_r  <= 1'd0;
 		mem_to_reg_mem_r <= 1'd0;
 		jmp_addr_mem_r   <= 32'd0;
-		branch_mem_r     <= 1'd0;	
+		branch_mem_r     <= 1'd0;
+		funct_3_mem_r    <= 3'd0;
   	end else if (mem_ready_s) begin
 		alu_result_mem_r <= alu_result_s;
 		rs2_data_mem_r   <= rs2_data_ex_r;
@@ -340,6 +343,7 @@ always @(posedge clk_i) begin
 		mem_to_reg_mem_r <= mem_to_reg_ex_r;
 		jmp_addr_mem_r   <= jmp_addr_s;
 		branch_mem_r     <= branch_ex_r;
+		funct_3_mem_r    <= inst_ex_r[14:12];
   	end
 end
 
@@ -373,12 +377,25 @@ end
 * Memory (MEM) Pipeline Section
 ******************************************************************************/
 
+byte_operation_unit byte_operation_unit(
+    .funct_3_i(funct_3_mem_r),
+	.addr_i(alu_result_mem_r[1:0]),
+	.mem_read_i(mem_read_mem_r),
+	.mem_write_i(mem_write_mem_r),
+	.data_to_mem_i(rs2_data_mem_r),
+	.data_from_mem_i(data_mem_data_i),
+    
+    .data_to_mem_o(data_mem_data_o),
+	.data_from_mem_o(data_mem_o),
+	.byte_select_o(byte_select_o)
+);
+
 // Data memory IOs
 assign data_mem_addr_o = alu_result_mem_r;
-assign data_mem_data_o = rs2_data_mem_r;
+//assign data_mem_data_o = rs2_data_mem_r;
 assign data_mem_rd_o   = mem_read_mem_r;
 assign data_mem_wr_o   = mem_write_mem_r;
-assign data_mem_o      = data_mem_data_i;
+//assign data_mem_o      = data_mem_data_i;
 
 // Signal to select the imput of the program counter
 assign instr_addr_src_s = branch_mem_r & zero_mem_r;

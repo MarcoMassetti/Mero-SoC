@@ -3,64 +3,123 @@ module alu_control_unit (
     input [2:0] funct_3_i,
     input [6:0] funct_7_i,
 
-    output reg [3:0] alu_ctrl_o
+    output reg [4:0] alu_ctrl_o
 );
 
 always @(*) begin
 
-    alu_ctrl_o = 4'd0;
+    alu_ctrl_o = 5'd0;
 
     case(alu_op_i)
-        // add, sub, xor
+        // add, sub, xor, or, and, sll, srl, sra, slt, sltu
         4'b0000 : begin
             case(funct_3_i)
                 // add, sub
                 3'b000 : begin
                     case(funct_7_i)
                         // add
-                        7'b0000000 : alu_ctrl_o = 4'b0000;
+                        7'b0000000 : alu_ctrl_o = 5'd0;
                         // sub
-                        7'b0100000 : alu_ctrl_o = 4'b0011;
+                        7'b0100000 : alu_ctrl_o = 5'd3;
+                        default : begin
+                        end
                     endcase
                 end
                 // xor
-                3'b100 : alu_ctrl_o = 4'b0100; 
+                3'b100 : alu_ctrl_o = 5'd4;
+                // or
+                3'b110 : alu_ctrl_o = 5'd9;
+                // and
+                3'b111 : alu_ctrl_o = 5'd10;
+                // sll
+                3'b001 : alu_ctrl_o = 5'd1;
+                // srl, sra
+                3'b101 : begin
+                    case(funct_7_i)
+                        // srl
+                        7'b0000000 : alu_ctrl_o = 5'd11;
+                        // sra
+                        7'b0100000 : alu_ctrl_o = 5'd2;
+                        default : begin
+                        end
+                    endcase
+                end
+                // slt
+                3'b010 : alu_ctrl_o = 5'd12;
+                // sltu
+                3'b011 : alu_ctrl_o = 5'd13;
+                default : begin
+                end
             endcase
         end
 
-        // lui
-        4'b0001 : alu_ctrl_o = 4'b0110;
-
-        // ble, bne
-        4'b0010 : begin
-            case (funct_3_i)
-                // ble
-                3'b101 : alu_ctrl_o = 4'b0111;
-                // bne
-                3'b001 : alu_ctrl_o = 4'b1000;
-            endcase
-        end
-
-        // jal, j, ret
-        4'b0011 : alu_ctrl_o = 4'b0101;
-
-        // auipc
-        4'b0100 : alu_ctrl_o = 4'b0000;
-
-        // addi, li, mv, slli, srai
+        // addi, xori, ori, andi, slli, srli, srai, slti, sltiu
         4'b0101 : begin 
             case(funct_3_i)
-                // addi, li, mv
-                3'b000 : alu_ctrl_o = 4'b0000; 
+                // addi
+                3'b000 : alu_ctrl_o = 5'd0; 
+                // xori
+                3'b100 : alu_ctrl_o = 5'd4;
+                // ori
+                3'b110 : alu_ctrl_o = 5'd9;
+                // andi
+                3'b111 : alu_ctrl_o = 5'd10;
                 // slli
-                3'b001 : alu_ctrl_o = 4'b0001; 
-                // srai
-                3'b101 : alu_ctrl_o = 4'b0010; 
+                3'b001 : alu_ctrl_o = 5'd1;
+                // srli, srai
+                3'b101 : begin
+                    case(funct_7_i)
+                        // srli
+                        7'b0000000 : alu_ctrl_o = 5'd11;
+                        // srai
+                        7'b0100000 : alu_ctrl_o = 5'd2;
+                        default : begin
+                        end
+                    endcase
+                end
+                // slti
+                3'b010 : alu_ctrl_o = 5'd12;
+                // sltiu
+                3'b011 : alu_ctrl_o = 5'd13;
+                default : begin
+                end
             endcase
         end
 
-        // lw, sw
-        4'b0110 : alu_ctrl_o = 4'b0000;
+        // lb, lh, lw, lbu, lhu, sb, sh, sw
+        4'b0110 : alu_ctrl_o = 5'd0;
+
+        // beq, bne, blt, bge, bltu, bgeu
+        4'b0010 : begin
+            case (funct_3_i)
+                // beq
+                3'b000 : alu_ctrl_o = 5'd14;
+                // bne
+                3'b001 : alu_ctrl_o = 5'd8;
+                // blt
+                3'b100 : alu_ctrl_o = 5'd15;
+                // bge
+                3'b101 : alu_ctrl_o = 5'd7;
+                // bltu
+                3'b110 : alu_ctrl_o = 5'd16;
+                // bgeu
+                3'b111 : alu_ctrl_o = 5'd17;
+                default : begin
+                end
+            endcase
+        end
+
+        // jal
+        4'b0011 : alu_ctrl_o = 5'd5;
+
+        // lui
+        4'b0001 : alu_ctrl_o = 5'd6;
+
+        // auipc
+        4'b0100 : alu_ctrl_o = 5'd0;
+
+        default : begin
+        end
     endcase
 end
 
