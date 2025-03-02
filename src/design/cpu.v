@@ -56,13 +56,13 @@ wire [31:0] rs1_data_s, rs2_data_s;
 // Control signals
 wire [2:0]  imm_select_s;
 wire [3:0]  alu_op_s;
-wire jmp_addr_op1_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s;
+wire jmp_addr_op1_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s, trap_s;
 reg hazard_nop_s;
 // Pipeline register
 reg  [31:0] immediate_ex_r, instr_addr_ex_r, rs1_data_ex_r, rs2_data_ex_r;
 reg  [3:0]  alu_op_ex_r;
 reg  [31:7] inst_ex_r;
-reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, mem_write_ex_r, jmp_addr_op1_sel_ex_r, branch_ex_r;
+reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, mem_write_ex_r, jmp_addr_op1_sel_ex_r, branch_ex_r, trap_ex_r;
 
 /* ---------------------------------------------------
 * Related to Execute (EX) Pipeline Section
@@ -80,7 +80,7 @@ reg  [1:0] forward_op1_sel_s, forward_op2_sel_s;
 // Pipeline register
 reg  [31:0] alu_result_mem_r, rs2_data_mem_r;
 reg  [4:0] rd_addr_mem_r;
-reg zero_mem_r, reg_write_mem_r, mem_to_reg_mem_r, branch_mem_r, mem_read_mem_r, mem_write_mem_r;
+reg zero_mem_r, reg_write_mem_r, mem_to_reg_mem_r, branch_mem_r, mem_read_mem_r, mem_write_mem_r, trap_mem_r;
 reg  [2:0] funct_3_mem_r;
 
 /* ---------------------------------------------------
@@ -89,7 +89,7 @@ reg  [2:0] funct_3_mem_r;
 // Data memory output
 wire [31:0] data_mem_o;
 // Pipeline register
-reg  [31:0] data_mem_o_wb_r, alu_result_wb_r;
+reg  [31:0] data_mem_o_wb_r, alu_result_wb_r, trap_wb_r;
 reg mem_to_reg_wb_r;
 
 
@@ -152,7 +152,7 @@ end
 register_file inst_register_file(
 	.clk_i(clk_i),
 	.rst_i(rst_i),
-	.stall_i(mem_ready_s),
+	.stall_i(!mem_ready_s),
 	
 	.reg_write_i(reg_write_wb_r),
     .write_addr_i(rd_addr_wb_r),
@@ -178,7 +178,8 @@ control_unit inst_control_unit(
     .mem_wr_o(mem_write_s),
     .mem_to_reg_o(mem_to_reg_s),
     .branch_o(branch_s),
-    .add_sum_reg_o(jmp_addr_op1_sel_s)
+    .add_sum_reg_o(jmp_addr_op1_sel_s),
+	.trap_o(trap_s)
 );
 
 // Selector for the bits that form the immediate value
@@ -232,6 +233,7 @@ always @(posedge clk_i) begin
 		jmp_addr_op1_sel_ex_r <= 1'd0;
 		alu_pc_ex_r     <= 1'd0;
 		branch_ex_r     <= 1'd0;
+		trap_ex_r       <= 1'd0;
 	end else if (mem_ready_s) begin
 		inst_ex_r       <= instr_id_r[31:7];
 		instr_addr_ex_r <= instr_addr_id_r;
@@ -247,6 +249,7 @@ always @(posedge clk_i) begin
 		jmp_addr_op1_sel_ex_r <= jmp_addr_op1_sel_s;
 		alu_pc_ex_r     <= alu_pc_s;
 		branch_ex_r     <= branch_s;
+		trap_ex_r       <= trap_s;
 	end
 end
 
@@ -332,6 +335,7 @@ always @(posedge clk_i) begin
 		jmp_addr_mem_r   <= 32'd0;
 		branch_mem_r     <= 1'd0;
 		funct_3_mem_r    <= 3'd0;
+		trap_mem_r       <= 1'd0;
   	end else if (mem_ready_s) begin
 		alu_result_mem_r <= alu_result_s;
 		rs2_data_mem_r   <= rs2_data_ex_r;
@@ -344,6 +348,7 @@ always @(posedge clk_i) begin
 		jmp_addr_mem_r   <= jmp_addr_s;
 		branch_mem_r     <= branch_ex_r;
 		funct_3_mem_r    <= inst_ex_r[14:12];
+		trap_mem_r       <= trap_ex_r;
   	end
 end
 
@@ -408,12 +413,14 @@ always @(posedge clk_i) begin
 		rd_addr_wb_r    <= 5'd0;
 		reg_write_wb_r  <= 1'd0;
 		mem_to_reg_wb_r <= 1'd0;
+		trap_wb_r       <= 1'd0;
   	end else if (mem_ready_s) begin
 		data_mem_o_wb_r <= data_mem_o;
 		alu_result_wb_r <= alu_result_mem_r;
 		rd_addr_wb_r    <= rd_addr_mem_r;
 		reg_write_wb_r  <= reg_write_mem_r;
-		mem_to_reg_wb_r <= mem_to_reg_mem_r;	
+		mem_to_reg_wb_r <= mem_to_reg_mem_r;
+		trap_wb_r       <= trap_mem_r;	
   	end
 end
 

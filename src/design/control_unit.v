@@ -4,7 +4,7 @@ module control_unit (
     output reg [3:0] alu_op_o,
     output reg [2:0] imm_select_o,
     output reg alu_src_o, alu_pc_o, add_sum_reg_o, reg_write_o,
-    output reg mem_rd_o, mem_wr_o, mem_to_reg_o, branch_o
+    output reg mem_rd_o, mem_wr_o, mem_to_reg_o, branch_o, trap_o
 );
 
 always @(*) begin
@@ -19,6 +19,7 @@ always @(*) begin
     mem_to_reg_o  = 1'b0;
     branch_o      = 1'b0;
     imm_select_o  = 3'b000;
+    trap_o        = 1'b0;
 
     case(op_i)
         // nop
@@ -93,6 +94,11 @@ always @(*) begin
             alu_pc_o     = 1'b1;
             reg_write_o  = 1'b1;
             imm_select_o = 3'b011; 	// "U" immediate format
+        end
+
+        // ecall, ebreak
+        7'b1110011 : begin
+            trap_o = 1'b1;
         end
 
         default : begin

@@ -1,0 +1,8 @@
+runs/ 
+obj/
+*.json
+#*.bin
+#*.elf
+transcript
+sim/outputs
+sim/work
