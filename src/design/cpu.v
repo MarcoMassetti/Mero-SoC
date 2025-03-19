@@ -1,6 +1,7 @@
 module cpu (
 	input  clk_i,
 	input  rst_i,
+	output trap_o,
 
 	// Instruction memory IOs
 	input  instr_mem_ready_i,
@@ -77,6 +78,7 @@ reg  [31:0] op1_jump_addr_s;
 wire [31:0] jmp_addr_s;
 // Forwarding
 reg  [1:0] forward_op1_sel_s, forward_op2_sel_s;
+reg  [31:0] rs2_data_sel_s;
 // Pipeline register
 reg  [31:0] alu_result_mem_r, rs2_data_mem_r;
 reg  [4:0] rd_addr_mem_r;
@@ -89,8 +91,8 @@ reg  [2:0] funct_3_mem_r;
 // Data memory output
 wire [31:0] data_mem_o;
 // Pipeline register
-reg  [31:0] data_mem_o_wb_r, alu_result_wb_r, trap_wb_r;
-reg mem_to_reg_wb_r;
+reg  [31:0] data_mem_o_wb_r, alu_result_wb_r;
+reg mem_to_reg_wb_r, trap_wb_r;
 
 
 /******************************************************************************
@@ -129,7 +131,7 @@ end
 
 // Instruction memory IOs
 assign instr_mem_addr_o = instr_addr_r;
-assign instr_mem_rd_o   = rst_i & data_mem_ready_i;
+assign instr_mem_rd_o   = rst_i; //& data_mem_ready_i;
 assign instruction_s    = instr_mem_data_i;
 
 // IF-ID pipeline register
@@ -302,6 +304,19 @@ always @(*) begin
 	end
 end
 
+// Forwarding for value to write in data memory
+always @(*) begin
+	case (forward_op2_sel_s)
+		// No forwarding
+		2'b00 : rs2_data_sel_s = rs2_data_ex_r;
+		// Forwarding from EX-MEM register
+		2'b01 : rs2_data_sel_s = alu_result_mem_r;
+		// Forwarding from MEM-WB register
+		2'b10 : rs2_data_sel_s = reg_data_i_s;
+		default : rs2_data_sel_s = rs2_data_ex_r;
+	endcase
+end
+
 // Arithmetic logic unit
 alu inst_alu(
 	.op1_i(op1_alu_s), 
@@ -338,7 +353,7 @@ always @(posedge clk_i) begin
 		trap_mem_r       <= 1'd0;
   	end else if (mem_ready_s) begin
 		alu_result_mem_r <= alu_result_s;
-		rs2_data_mem_r   <= rs2_data_ex_r;
+		rs2_data_mem_r   <= rs2_data_sel_s;
 		mem_read_mem_r   <= mem_read_ex_r;
 		mem_write_mem_r  <= mem_write_ex_r;
 		zero_mem_r       <= zero_s;
@@ -431,5 +446,7 @@ end
 
 //Multiplexer to select the input of the register file write port
 assign reg_data_i_s = (mem_to_reg_wb_r == 1'd0) ? alu_result_wb_r : data_mem_o_wb_r;
+
+assign trap_o = trap_wb_r;
 
 endmodule
