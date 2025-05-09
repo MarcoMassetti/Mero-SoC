@@ -6,11 +6,14 @@ parameter CLOCK = 20;
 reg clk_i_s, rst_i_s;
 wire merged_mem_ready_i_s, merged_mem_rd_o_s, merged_mem_wr_o_s;
 wire [31:0] merged_mem_data_i_s, merged_mem_addr_o_s, merged_mem_data_o_s;
+wire [3:0]  byte_select_s;
+wire trap_s;
 
 
 cpu_top DUT(
 	.clk_i(clk_i_s),
     .rst_i(rst_i_s),
+	.trap_o(trap_s),
 
 	// Common memory IOs
 	.merged_mem_ready_i(merged_mem_ready_i_s),
@@ -18,7 +21,8 @@ cpu_top DUT(
 	.merged_mem_rd_o(merged_mem_rd_o_s),
 	.merged_mem_wr_o(merged_mem_wr_o_s),
 	.merged_mem_addr_o(merged_mem_addr_o_s),
-	.merged_mem_data_o(merged_mem_data_o_s)
+	.merged_mem_data_o(merged_mem_data_o_s),
+	.byte_select_o(byte_select_s)
 );
 
 ram_wrapper inst_ram_wrapper(	

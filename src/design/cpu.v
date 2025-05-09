@@ -33,7 +33,7 @@ wire        instr_addr_src_s;
 wire [31:0] next_instr_addr_s;
 reg  [31:0] jmp_addr_mem_r;
 // Current instruction address
-reg  [31:0] instr_addr_s;
+wire [31:0] instr_addr_s;
 reg  [31:0] instr_addr_r;
 // Instruction memory output
 wire [31:0] instruction_s;

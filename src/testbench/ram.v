@@ -40,6 +40,24 @@ module ram(
 
 reg [DATA_WIDTH-1:0]    mem [0:RAM_DEPTH-1];
 
+  parameter FILE_NAME;
+  integer file;
+  integer i;
+  reg [DATA_WIDTH-1:0] data;
+  initial begin
+    file = $fopen(FILE_NAME, "rb");
+    if (file == 0) begin
+      $display("Error opening file");
+    end else begin
+      i = 0;
+      while ($fread(data, file)) begin
+          mem[i] = {data[7:0], data[15:8], data[23:16], data[31:24]};
+          i = i + 1;
+      end
+      $fclose(file);
+    end
+  end
+
   // Memory Write Block Port 0
   // Write Operation : When web0 = 0, csb0 = 0
   always @(negedge clk0) begin
