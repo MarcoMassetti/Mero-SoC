@@ -6,13 +6,15 @@ if {[batch_mode] == 0 && [file exist wave.do]} {
 
 radix -hexadecimal
 formatTime +nodefunit
-#add log -r *
+#add log -r /*
+#add log sim:/cpu_top_tb/DUT/inst_cpu/inst_register_file/registers
+#add log sim:/cpu_top_tb/inst_ram_wrapper/inst_ram/mem
 
 echo "\n\nSimulation Start\n"
 
 #load_code
 
-run_until_break 100ns
+run_until_break 100000ns
 
 report_rf
 

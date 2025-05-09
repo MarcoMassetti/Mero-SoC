@@ -12,7 +12,7 @@ echo "\n\nSimulation Start\n"
 
 #load_code
 
-run_until_break 100ns
+run_until_break 1000ns
 
 report_rf
 
