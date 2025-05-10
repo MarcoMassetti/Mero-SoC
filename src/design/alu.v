@@ -27,7 +27,7 @@ always @(*) begin
         // xor 
 		5'd4 : data_o = op1_i ^ op2_i;
 
-        // jal, j, ret
+        // jal, jalr
         5'd5 : begin 
             data_o = op1_i + 32'd4;
             Zero_o = 1'b1;

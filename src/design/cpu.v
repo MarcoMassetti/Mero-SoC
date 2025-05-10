@@ -57,27 +57,29 @@ wire [31:0] rs1_data_s, rs2_data_s;
 // Control signals
 wire [2:0]  imm_select_s;
 wire [3:0]  alu_op_s;
-wire jmp_addr_op1_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s, trap_s;
+wire jmp_addr_op_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s, trap_s;
 reg hazard_nop_s;
 // Pipeline register
 reg  [31:0] immediate_ex_r, instr_addr_ex_r, rs1_data_ex_r, rs2_data_ex_r;
 reg  [3:0]  alu_op_ex_r;
 reg  [31:7] inst_ex_r;
-reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, mem_write_ex_r, jmp_addr_op1_sel_ex_r, branch_ex_r, trap_ex_r;
+reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, mem_write_ex_r, jmp_addr_op_sel_ex_r, branch_ex_r, trap_ex_r;
 
 /* ---------------------------------------------------
 * Related to Execute (EX) Pipeline Section
 * --------------------------------------------------*/
 // ALU
-reg  [31:0] op1_alu_s, op2_alu_s;
+wire [31:0] op1_alu_s;
+reg  [31:0] op2_alu_s;
 wire [31:0] alu_result_s;
 wire [4:0]  alu_ctrl_s;
 wire zero_s;
 // Jump
-reg  [31:0] op1_jump_addr_s;
+wire  [31:0] op1_jump_addr_s, op2_jump_addr_s;
 wire [31:0] jmp_addr_s;
 // Forwarding
 reg  [1:0] forward_op1_sel_s, forward_op2_sel_s;
+reg  [31:0] op1_forward_s;
 reg  [31:0] rs2_data_sel_s;
 // Pipeline register
 reg  [31:0] alu_result_mem_r, rs2_data_mem_r;
@@ -180,7 +182,7 @@ control_unit inst_control_unit(
     .mem_wr_o(mem_write_s),
     .mem_to_reg_o(mem_to_reg_s),
     .branch_o(branch_s),
-    .add_sum_reg_o(jmp_addr_op1_sel_s),
+    .add_sum_reg_o(jmp_addr_op_sel_s),
 	.trap_o(trap_s)
 );
 
@@ -232,7 +234,7 @@ always @(posedge clk_i) begin
 		mem_write_ex_r  <= 1'd0;
 		alu_op_ex_r     <= 4'd0;
 		alu_src_ex_r    <= 1'd0;
-		jmp_addr_op1_sel_ex_r <= 1'd0;
+		jmp_addr_op_sel_ex_r <= 1'd0;
 		alu_pc_ex_r     <= 1'd0;
 		branch_ex_r     <= 1'd0;
 		trap_ex_r       <= 1'd0;
@@ -248,7 +250,7 @@ always @(posedge clk_i) begin
 		mem_write_ex_r  <= mem_write_s;
 		alu_op_ex_r     <= alu_op_s;
 		alu_src_ex_r    <= alu_src_s;
-		jmp_addr_op1_sel_ex_r <= jmp_addr_op1_sel_s;
+		jmp_addr_op_sel_ex_r <= jmp_addr_op_sel_s;
 		alu_pc_ex_r     <= alu_pc_s;
 		branch_ex_r     <= branch_s;
 		trap_ex_r       <= trap_s;
@@ -260,32 +262,32 @@ end
 * Execute (EX) Pipeline Section
 ******************************************************************************/
 
-// Multiplexer to select the input of the adder for the target address of a jump
-assign op1_jump_addr_s = (jmp_addr_op1_sel_ex_r == 1'd0) ? instr_addr_ex_r : rs1_data_ex_r;
+// Multiplexer to select the first input of the adder for the target address of a jump
+assign op1_jump_addr_s = (jmp_addr_op_sel_ex_r == 1'd0) ? instr_addr_ex_r : op1_forward_s;
+// Multiplexer to select the second input of the adder for the target address of a jump
+assign op2_jump_addr_s = (jmp_addr_op_sel_ex_r == 1'd0) ? {immediate_ex_r[30:0], 1'd0} : immediate_ex_r;
 
 // Adder to calculate the target address of a jump
-assign jmp_addr_s = op1_jump_addr_s + {immediate_ex_r[30:0], 1'd0};
+assign jmp_addr_s = op1_jump_addr_s + op2_jump_addr_s;
 
-// Multiplexer to select the operant 1 of the ALU
+// Multiplexer to select forwarding of operand 1
 always @(*) begin
-	if (alu_pc_ex_r == 1'd0) begin
-        // Operand from register file
-        case (forward_op1_sel_s)
-            // No forwarding
-            2'b00 : op1_alu_s = rs1_data_ex_r;
-            // Forwarding from EX-MEM register
-            2'b01 : op1_alu_s = alu_result_mem_r;
-            // Forwarding from MEM-WB register
-            2'b10 : op1_alu_s = reg_data_i_s;
-            default : op1_alu_s = rs1_data_ex_r;
-        endcase
-	end else begin
-		// Operand is the instruction address
-		op1_alu_s = instr_addr_ex_r;
-	end
+	// Operand from register file
+	case (forward_op1_sel_s)
+		// No forwarding
+		2'b00 : op1_forward_s = rs1_data_ex_r;
+		// Forwarding from EX-MEM register
+		2'b01 : op1_forward_s = alu_result_mem_r;
+		// Forwarding from MEM-WB register
+		2'b10 : op1_forward_s = reg_data_i_s;
+		default : op1_forward_s = rs1_data_ex_r;
+	endcase
 end
 
-// Multiplexer to select the operant 2 of the ALU
+// Multiplexer to select the operand 1 of the ALU (PC or reg/forward)
+assign op1_alu_s = (alu_pc_ex_r == 1'd0) ? op1_forward_s : instr_addr_ex_r;
+
+// Multiplexer to select the operand 2 of the ALU
 always @(*) begin
 	if (alu_src_ex_r == 1'd0) begin
         // Operand from register file

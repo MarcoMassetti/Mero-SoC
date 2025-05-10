@@ -109,7 +109,7 @@ always @(*) begin
             endcase
         end
 
-        // jal
+        // jal, jalr
         4'b0011 : alu_ctrl_o = 5'd5;
 
         // lui

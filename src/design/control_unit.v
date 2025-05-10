@@ -75,8 +75,9 @@ always @(*) begin
         7'b1100111 : begin
             alu_op_o      = 4'b0011;
             alu_pc_o      = 1'b1;
-            add_sum_reg_o = 1'b1;
+            reg_write_o   = 1'b1;
             branch_o      = 1'b1;
+            add_sum_reg_o = 1'b1;
         end
 
         // lui
