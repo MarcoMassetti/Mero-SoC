@@ -1,17 +1,27 @@
 # Variables used during simulation
 export OUTPUT_DIR
 export TEST_DIR
+export SRC_DIR
 
 # Simulation directory for testcase
 OUTPUT_DIR := $(subst $(SRC_DIR),$(OBJ_DIR),$(CURRENT_DIR))
 
+ifeq ($(SIMULATOR), modelsim)
+# Simulation startup for modelsim
 # Start simulation in batch mode
-batch : analyze-design analyze-testbench golden
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin
+batch : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 # Start simulation in gui mode
-gui : analyze-design analyze-testbench  golden
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin
+gui : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet        -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	
+else ifeq ($(SIMULATOR), icarus)
+# Simulation startup for icarus
+batch :
+	iverilog -Wall -o $(OBJ_DIR)/cpu_top_tb.vvp -c $(TEST_DIR)/srclist.txt -DFILE_NAME="ram.v"
+	#cd $(OUTPUT_DIR) ; vvp -n -l tc.out $(OBJ_DIR)/cpu_top_tb.vvp
+endif
 	
 # Compile the design
 analyze-design :
@@ -32,6 +42,10 @@ $(OUTPUT_DIR)/$(SOURCE_FILE_NAME)_rf_golden.txt : $(OUTPUT_DIR)/$(SOURCE_FILE_NA
 $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin : $(SOURCE_FILE_NAME).c $(OUTPUT_DIR)
 	$(ARCH)-gcc $(OPTS) $(CRT0) $< -o $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).elf
 	$(ARCH)-objcopy $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).elf $@ -O binary
+	
+# Compile C code and produce binary file
+$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt : $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin
+	python3 $(TEST_DIR)/binary_conversion.py $< $@
 
 # Creating simulation directory
 $(OUTPUT_DIR) : 

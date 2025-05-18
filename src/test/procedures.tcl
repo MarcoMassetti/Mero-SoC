@@ -1,7 +1,7 @@
 # Load binary file into testbench ram
 proc load_code {} {
 	set input_file "$::env(OBJ_DIR)/$::env(SOURCE_FILE_NAME).bin"
-	set mem_path "sim:/cpu_top_tb/inst_ram_wrapper/inst_ram/mem"
+	set mem_path "sim:/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/mem"
 
 	set cmd "change"
 	set addr 0
@@ -26,7 +26,7 @@ proc load_code {} {
 proc run_until_break {max_time} {
 	onbreak resume
 	
-	set trap_path  "sim:/trap_s"
+	set trap_path  "sim:/DUT/inst_cpu/trap_o"
 	set rf_path "sim:/cpu_top_tb/DUT/inst_cpu/inst_register_file/registers"
 	
 	when -label trap "$trap_path'EVENT and $trap_path=1 and ($rf_path\(17)==a or $rf_path\(17)==5d)" {

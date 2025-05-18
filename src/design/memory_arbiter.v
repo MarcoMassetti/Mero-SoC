@@ -14,7 +14,7 @@ module memory_arbiter (
 	input [31:0] data_mem_addr_i,
 	input [31:0] data_mem_data_i,
 	output reg data_mem_ready_o,
-	output reg [31:0] data_mem_data_o,
+	output [31:0] data_mem_data_o,
 
 	// Common memory IOs
 	input  merged_mem_ready_i,

@@ -1,0 +1,11 @@
+$(SRC_DIR)/design/alu_control_unit.v 
+$(SRC_DIR)/design/alu.v
+$(SRC_DIR)/design/byte_operation_unit.v
+$(SRC_DIR)/design/control_unit.v
+$(SRC_DIR)/design/register_file.v
+$(SRC_DIR)/design/cpu.v
+$(SRC_DIR)/design/memory_arbiter.v
+$(SRC_DIR)/design/cpu_top.v
+$(SRC_DIR)/testbench/ram.v
+$(SRC_DIR)/testbench/ram_wrapper.v
+$(SRC_DIR)/testbench/cpu_top_tb.v

@@ -12,6 +12,8 @@ analyze : \
 	$(WORK_DIR)/register_file/_primary.dat \
 	$(WORK_DIR)/cpu/_primary.dat \
 	$(WORK_DIR)/memory_arbiter/_primary.dat \
+	$(WORK_DIR)/ram/_primary.dat \
+	$(WORK_DIR)/ram_wrapper/_primary.dat \
 	$(WORK_DIR)/cpu_top/_primary.dat \
 
 
@@ -37,6 +39,12 @@ $(WORK_DIR)/cpu/_primary.dat : $(SRC_DIR)/design/cpu.v
 	vlog -quiet -work $(WORK_DIR) $<
 
 $(WORK_DIR)/memory_arbiter/_primary.dat : $(SRC_DIR)/design/memory_arbiter.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/ram_wrapper/_primary.dat : $(SRC_DIR)/design/ram_wrapper.v
 	vlog -quiet -work $(WORK_DIR) $<
 
 $(WORK_DIR)/cpu_top/_primary.dat : $(SRC_DIR)/design/cpu_top.v

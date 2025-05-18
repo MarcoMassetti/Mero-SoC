@@ -1,6 +1,7 @@
 // OpenRAM SRAM model
 // Words: 1024
 // Word size: 32
+//`define FILE_NAME "minv.bin"
 
 module ram(
 // Port 0: RW
@@ -11,6 +12,7 @@ module ram(
   parameter ADDR_WIDTH = 15 ;
   parameter RAM_DEPTH = 1 << ADDR_WIDTH;
   parameter NUM_WMASKS = 4 ;
+  parameter FILE_NAME = "software.txt";
   // FIXME: This delay is arbitrary.
 
   input  clk0; // clock
@@ -38,29 +40,15 @@ module ram(
     //dout0 = 32'bx;
   end
 
-reg [DATA_WIDTH-1:0]    mem [0:RAM_DEPTH-1];
+(* ram_decomp = "power" *) reg [DATA_WIDTH-1:0]    mem [0:RAM_DEPTH-1];
 
-  parameter FILE_NAME;
-  integer file;
-  integer i;
-  reg [DATA_WIDTH-1:0] data;
   initial begin
-    file = $fopen(FILE_NAME, "rb");
-    if (file == 0) begin
-      $display("Error opening file");
-    end else begin
-      i = 0;
-      while ($fread(data, file)) begin
-          mem[i] = {data[7:0], data[15:8], data[23:16], data[31:24]};
-          i = i + 1;
-      end
-      $fclose(file);
-    end
+    $readmemb(FILE_NAME, mem);
   end
 
   // Memory Write Block Port 0
   // Write Operation : When web0 = 0, csb0 = 0
-  always @(negedge clk0) begin
+  always @(posedge clk0) begin
     if ( !csb0_reg && !web0_reg ) begin
         if (wmask0_reg[0])
                 mem[addr0_reg][7:0] = din0_reg[7:0];
@@ -75,7 +63,7 @@ reg [DATA_WIDTH-1:0]    mem [0:RAM_DEPTH-1];
 
   // Memory Read Block Port 0
   // Read Operation : When web0 = 1, csb0 = 0
-  always @(negedge clk0) begin
+  always @(posedge clk0) begin
     if (!csb0_reg && web0_reg) begin
        dout0 <= mem[addr0_reg];
     end

@@ -52,7 +52,7 @@ reg  [31:0] immediate_s;
 // Register file
 reg         reg_write_wb_r;
 reg  [4:0]  rd_addr_wb_r;
-reg  [31:0] reg_data_i_s;
+wire  [31:0] reg_data_i_s;
 wire [31:0] rs1_data_s, rs2_data_s;
 // Control signals
 wire [2:0]  imm_select_s;
