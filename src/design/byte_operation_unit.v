@@ -49,7 +49,12 @@ always @(*) begin
 			end
 
 			// sw
-			3'b010 : byte_select_o = 4'b1111;
+			3'b010 : begin
+				byte_select_o = 4'b1111;
+				if (addr_i != 2'b00) begin
+            		//$error("Misaligned write");
+				end
+			end
 
 			default : begin
 			end
@@ -92,7 +97,12 @@ always @(*) begin
 			end
 
 			// lw
-			3'b010 : data_from_mem_o = data_from_mem_i;
+			3'b010 : begin
+				data_from_mem_o = data_from_mem_i;
+				if (addr_i != 2'b00) begin
+            		//$error("Misaligned load");
+				end
+			end
 
 			// lbu
 			3'b100 : begin

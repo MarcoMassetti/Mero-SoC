@@ -208,7 +208,7 @@ end
 always @(*) begin
 	hazard_nop_s = 1'b0;
 	// If read from data memory
-	if (mem_read_ex_r == 1'b1) begin
+	if (mem_read_ex_r == 1'b1 && instr_addr_src_s==1'b0) begin
 		// If destination register is one that must be read now
 		if (inst_ex_r[11:7] == instr_id_r[19:15] ||
 			inst_ex_r[11:7] == instr_id_r[24:20]) begin
