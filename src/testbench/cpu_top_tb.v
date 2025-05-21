@@ -4,11 +4,18 @@ module cpu_top_tb ();
 
 parameter CLOCK = 10;
 reg clk_i_s, rst_i_s;
+wire [3:0] led_s;
+wire tx_s;
 
 cpu_top DUT(
 	.clk_i(clk_i_s),
-    .rst_i(rst_i_s)
+    .rst_i(rst_i_s),
+    .led_o(led_s),
+    .tx_o(tx_s),
+    .rx_i(1'b1)
 );
+
+
 
 //Generation of the clock signal
 always begin

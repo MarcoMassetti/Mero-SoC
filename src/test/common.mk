@@ -9,12 +9,18 @@ OUTPUT_DIR := $(subst $(SRC_DIR),$(OBJ_DIR),$(CURRENT_DIR))
 ifeq ($(SIMULATOR), modelsim)
 # Simulation startup for modelsim
 # Start simulation in batch mode
-batch : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+batch : analyze-xilinx analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; \
+	vmap unisims "$(OBJ_DIR)/unisims/" ; \
+	vmap glbl "$(OBJ_DIR)/glbl/" ; \
+	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 # Start simulation in gui mode
-gui : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet        -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+gui : analyze-xilinx analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; \
+	vmap unisims "$(OBJ_DIR)/unisim/" ; \
+	vmap glbl "$(OBJ_DIR)/glbl/" ; \
+	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 else ifeq ($(SIMULATOR), icarus)
 # Simulation startup for icarus
@@ -22,7 +28,11 @@ batch :
 	iverilog -Wall -o $(OBJ_DIR)/cpu_top_tb.vvp -c $(TEST_DIR)/srclist.txt -DFILE_NAME="ram.v"
 	#cd $(OUTPUT_DIR) ; vvp -n -l tc.out $(OBJ_DIR)/cpu_top_tb.vvp
 endif
-	
+
+# Compile the xilinx libraries
+analyze-xilinx :
+	make -f $(SRC_DIR)/xilinx/Makefile analyze
+
 # Compile the design
 analyze-design :
 	make -f $(SRC_DIR)/design/Makefile analyze

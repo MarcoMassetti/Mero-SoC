@@ -19,7 +19,6 @@ module axi_master(
 		// Read Data (R) channel
 		input  rvalid_i,
 		output reg rready_o,
-		input  rlast_i,
 		input  [31:0] rdata_i,
 		input  [1:0] rresp_i,
 
@@ -31,7 +30,6 @@ module axi_master(
 		// Write Data (W) channel
 		output reg wvalid_o,
 		input  wready_i,
-		output reg wlast_o,
 		output reg [31:0] wdata_o,
 
 		// Write Response (B) channel
@@ -161,7 +159,6 @@ always @(*) begin
 	awvalid_o  = 'b0;
 	awaddr_o   = 'b0;
 	wvalid_o   = 'b0;
-	wlast_o    = 'b0;
 	wdata_o    = 'b0;
 	bready_o   = 'b0;
 
@@ -190,7 +187,6 @@ always @(*) begin
 			awaddr_o  = hs_addr_i;
 			
 			wvalid_o = 'b1;
-			wlast_o  = 'b1;
 			wdata_o  = hs_data_i;
 		end
 
@@ -203,7 +199,6 @@ always @(*) begin
 		// Wait end of write data transfer
 		WAIT_W : begin
 			wvalid_o = 'b1;
-			wlast_o  = 'b1;
 			wdata_o  = hs_data_i;
 		end
 
