@@ -14,8 +14,8 @@ analyze : \
 	$(WORK_DIR)/memory_arbiter/_primary.dat \
 	$(WORK_DIR)/ram/_primary.dat \
 	$(WORK_DIR)/ram_wrapper/_primary.dat \
+	$(WORK_DIR)/axi_master/_primary.dat \
 	$(WORK_DIR)/cpu_top/_primary.dat \
-
 
 $(WORK_DIR)/_info : 
 	vlib -type directory $(WORK_DIR)
@@ -45,6 +45,9 @@ $(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/ram_wrapper/_primary.dat : $(SRC_DIR)/design/ram_wrapper.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/axi_master/_primary.dat : $(SRC_DIR)/design/axi_master.v
 	vlog -quiet -work $(WORK_DIR) $<
 
 $(WORK_DIR)/cpu_top/_primary.dat : $(SRC_DIR)/design/cpu_top.v
