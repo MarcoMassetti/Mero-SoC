@@ -48,13 +48,13 @@ reg [31:0] rdata_reg_r;
 
 // Signals and encoding for FSM status
 reg [3:0] current_state_r, next_state_s;
-parameter IDLE    = 4'd0;
-parameter AR_TR   = 4'd1;
-parameter R_TR    = 4'd2;
-parameter W_TR    = 4'd4;
-parameter WAIT_AW = 4'd5;
-parameter WAIT_W  = 4'd6;
-parameter B_TR    = 4'd7;
+localparam IDLE    = 4'd0;
+localparam AR_TR   = 4'd1;
+localparam R_TR    = 4'd2;
+localparam W_TR    = 4'd4;
+localparam WAIT_AW = 4'd5;
+localparam WAIT_W  = 4'd6;
+localparam B_TR    = 4'd7;
 
 
 // Register for hs interface edge detector

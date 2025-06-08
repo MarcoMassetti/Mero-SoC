@@ -13,7 +13,10 @@ export TEST_DIR
 OUTPUT_DIR := $(subst $(SRC_DIR),$(OBJ_DIR),$(CURRENT_DIR))
 
 batch : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).cpu_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; \
+	vmap unisims "$(OBJ_DIR)/unisims/" ; \
+	vmap glbl "$(OBJ_DIR)/glbl/" ; \
+	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 	
 gui : analyze-design analyze-testbench  golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt

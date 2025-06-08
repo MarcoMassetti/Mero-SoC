@@ -4,15 +4,21 @@ module cpu_top_tb ();
 
 parameter CLOCK = 10;
 reg clk_i_s, rst_i_s;
-wire [3:0] led_s;
-wire tx_s;
 
 cpu_top DUT(
 	.clk_i(clk_i_s),
     .rst_i(rst_i_s),
-    .led_o(led_s),
-    .tx_o(tx_s),
-    .rx_i(1'b1)
+    .led_o(),
+	// UART
+    .tx_o(),
+    .rx_i(1'b1),
+	// SPI
+	.spi_cs_no(),
+	.spi_mosi_o(),
+	.spi_miso_i(1'b1),
+	.wp_no(),
+	.hold_no()
+
 );
 
 
