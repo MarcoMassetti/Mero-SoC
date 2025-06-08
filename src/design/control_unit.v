@@ -1,7 +1,7 @@
 module control_unit (
     input [6:0] op_i,
     
-    output reg [3:0] alu_op_o,
+    output reg [2:0] alu_op_o,
     output reg [2:0] imm_select_o,
     output reg alu_src_o, alu_pc_o, add_sum_reg_o, reg_write_o,
     output reg mem_rd_o, mem_wr_o, mem_to_reg_o, branch_o, trap_o
@@ -9,7 +9,7 @@ module control_unit (
 
 always @(*) begin
 
-    alu_op_o      = 4'b0000;
+    alu_op_o      = 3'b000;
     alu_src_o     = 1'b0;
     alu_pc_o      = 1'b0;
     add_sum_reg_o = 1'b0;
@@ -33,14 +33,14 @@ always @(*) begin
 
         // addi, xori, ori, andi, slli, srli, srai, slti, sltiu
         7'b0010011 : begin
-            alu_op_o    = 4'b0101;
+            alu_op_o    = 3'b101;
             alu_src_o   = 1'b1;
             reg_write_o = 1'b1;
         end
 
         // lb, lh, lw, lbu, lhu
         7'b0000011 : begin
-            alu_op_o     = 4'b0110;
+            alu_op_o     = 3'b110;
             alu_src_o    = 1'b1;
             reg_write_o  = 1'b1;
             mem_rd_o     = 1'b1;
@@ -49,7 +49,7 @@ always @(*) begin
 
         // sb, sh, sw
         7'b0100011 : begin
-            alu_op_o     = 4'b0110;
+            alu_op_o     = 3'b110;
             alu_src_o    = 1'b1;
             mem_wr_o     = 1'b1;
             imm_select_o = 3'b001; 	// "S" immediate format
@@ -57,14 +57,14 @@ always @(*) begin
 
         // beq, bne, blt, bge, bltu, bgeu
         7'b1100011 : begin
-            alu_op_o     = 4'b0010;
+            alu_op_o     = 3'b010;
             branch_o     = 1'b1;
             imm_select_o = 3'b010; 	// "SB" immediate format 
         end
 
         // jal
         7'b1101111 : begin
-            alu_op_o     = 4'b0011;
+            alu_op_o     = 3'b011;
             alu_pc_o     = 1'b1;
             reg_write_o  = 1'b1;
             branch_o     = 1'b1;
@@ -73,7 +73,7 @@ always @(*) begin
 
         // jalr
         7'b1100111 : begin
-            alu_op_o      = 4'b0011;
+            alu_op_o      = 3'b011;
             alu_pc_o      = 1'b1;
             reg_write_o   = 1'b1;
             branch_o      = 1'b1;
@@ -82,7 +82,7 @@ always @(*) begin
 
         // lui
         7'b0110111 : begin
-            alu_op_o     = 4'b0001;
+            alu_op_o     = 3'b001;
             alu_src_o    = 1'b1;
             reg_write_o  = 1'b1;
             imm_select_o = 3'b011; 	// "U" immediate format
@@ -90,7 +90,7 @@ always @(*) begin
 
         // auipc
         7'b0010111 : begin
-            alu_op_o     = 4'b0100;
+            alu_op_o     = 3'b100;
             alu_src_o    = 1'b1;
             alu_pc_o     = 1'b1;
             reg_write_o  = 1'b1;

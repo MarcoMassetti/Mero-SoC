@@ -1,5 +1,5 @@
 module alu_control_unit (
-    input [3:0] alu_op_i,
+    input [2:0] alu_op_i,
     input [2:0] funct_3_i,
     input [6:0] funct_7_i,
 
@@ -12,7 +12,7 @@ always @(*) begin
 
     case(alu_op_i)
         // add, sub, xor, or, and, sll, srl, sra, slt, sltu
-        4'b0000 : begin
+        3'b000 : begin
             case(funct_3_i)
                 // add, sub
                 3'b000 : begin
@@ -54,7 +54,7 @@ always @(*) begin
         end
 
         // addi, xori, ori, andi, slli, srli, srai, slti, sltiu
-        4'b0101 : begin 
+        3'b101 : begin 
             case(funct_3_i)
                 // addi
                 3'b000 : alu_ctrl_o = 5'd0; 
@@ -87,10 +87,10 @@ always @(*) begin
         end
 
         // lb, lh, lw, lbu, lhu, sb, sh, sw
-        4'b0110 : alu_ctrl_o = 5'd0;
+        3'b110 : alu_ctrl_o = 5'd0;
 
         // beq, bne, blt, bge, bltu, bgeu
-        4'b0010 : begin
+        3'b010 : begin
             case (funct_3_i)
                 // beq
                 3'b000 : alu_ctrl_o = 5'd14;
@@ -110,13 +110,13 @@ always @(*) begin
         end
 
         // jal, jalr
-        4'b0011 : alu_ctrl_o = 5'd5;
+        3'b011 : alu_ctrl_o = 5'd5;
 
         // lui
-        4'b0001 : alu_ctrl_o = 5'd6;
+        3'b001 : alu_ctrl_o = 5'd6;
 
         // auipc
-        4'b0100 : alu_ctrl_o = 5'd0;
+        3'b100 : alu_ctrl_o = 5'd0;
 
         default : begin
         end

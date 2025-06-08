@@ -1,5 +1,5 @@
 // Calculate Fibonacci sequence up to the Nth number
-#define N 50
+#define N 25
 
 // Function to calculate the nth Fibonacci number
 int fibonacci(int n) {

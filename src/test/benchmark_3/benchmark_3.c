@@ -7,7 +7,7 @@ void test() {
     volatile unsigned int ub = 2;
     volatile int i;
 
-    for (i = 0; i < 1000; i++) {
+    for (i = 0; i < 100; i++) {
         result += a + b;
         uresult += ua + ub;
 

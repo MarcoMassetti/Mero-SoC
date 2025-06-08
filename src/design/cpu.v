@@ -56,12 +56,12 @@ wire  [31:0] reg_data_i_s;
 wire [31:0] rs1_data_s, rs2_data_s;
 // Control signals
 wire [2:0]  imm_select_s;
-wire [3:0]  alu_op_s;
+wire [2:0]  alu_op_s;
 wire jmp_addr_op_sel_s, reg_write_s, alu_pc_s, alu_src_s, mem_read_s, mem_write_s, mem_to_reg_s, branch_s, trap_s;
 reg hazard_nop_s;
 // Pipeline register
 reg  [31:0] immediate_ex_r, instr_addr_ex_r, rs1_data_ex_r, rs2_data_ex_r;
-reg  [3:0]  alu_op_ex_r;
+reg  [2:0]  alu_op_ex_r;
 reg  [31:7] inst_ex_r;
 reg alu_pc_ex_r, alu_src_ex_r, reg_write_ex_r, mem_to_reg_ex_r, mem_read_ex_r, mem_write_ex_r, jmp_addr_op_sel_ex_r, branch_ex_r, trap_ex_r;
 
@@ -232,7 +232,7 @@ always @(posedge clk_i) begin
 		mem_to_reg_ex_r <= 1'd0;
 		mem_read_ex_r   <= 1'd0;
 		mem_write_ex_r  <= 1'd0;
-		alu_op_ex_r     <= 4'd0;
+		alu_op_ex_r     <= 3'd0;
 		alu_src_ex_r    <= 1'd0;
 		jmp_addr_op_sel_ex_r <= 1'd0;
 		alu_pc_ex_r     <= 1'd0;

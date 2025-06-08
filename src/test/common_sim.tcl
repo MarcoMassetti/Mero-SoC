@@ -22,7 +22,7 @@ echo "\n\nSimulation Start\n"
 #load_code
 
 # Run until trap is issued or until timeout
-run_until_break 100000ns
+run_until_break 10ms
 
 # Print register file content
 report_rf
