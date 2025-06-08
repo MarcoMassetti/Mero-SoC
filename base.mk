@@ -1,6 +1,6 @@
 # Top directory of the project
 #TOP_DIR=$(dir $(lastword $(MAKEFILE_LIST)))
-TOP_DIR=/media/marco/Data_L/EDA/openlane2/my_designs/cpu
+TOP_DIR=/media/marco/Shared/fpga/cpu
 # Source files directory
 SRC_DIR=$(TOP_DIR)/src
 # Build directory

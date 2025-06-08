@@ -1,5 +1,5 @@
 # Include makefile with base constants definitions
-include /media/marco/Data_L/EDA/openlane2/my_designs/cpu/base.mk
+include /media/marco/Shared/fpga/cpu/base.mk
 
 # Incremental compilation of all verilog files of the design
 analyze : \

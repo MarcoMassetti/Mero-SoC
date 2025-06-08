@@ -1,4 +1,4 @@
-include /media/marco/Data_L/EDA/openlane2/my_designs/cpu/base.mk
+include /media/marco/Shared/fpga/cpu/base.mk
 
 export CURRENT_DIR=$(shell pwd)
 
