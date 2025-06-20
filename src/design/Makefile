@@ -14,10 +14,14 @@ analyze : \
 	$(WORK_DIR)/memory_arbiter/_primary.dat \
 	$(WORK_DIR)/ram/_primary.dat \
 	$(WORK_DIR)/ram_wrapper/_primary.dat \
+	$(WORK_DIR)/async_fifo/_primary.dat \
+	$(WORK_DIR)/axi_cdc/_primary.dat \
 	$(WORK_DIR)/axi_master/_primary.dat \
 	$(WORK_DIR)/axi_interconnect/_primary.dat \
 	$(WORK_DIR)/axi_uartlite_0/_primary.dat \
 	$(WORK_DIR)/axi_quad_spi_0/_primary.dat \
+	$(WORK_DIR)/clk_wiz_0/_primary.dat \
+	$(WORK_DIR)/mig_7series_0/_primary.dat \
 	$(WORK_DIR)/cpu_top/_primary.dat \
 
 $(WORK_DIR)/_info : 
@@ -50,6 +54,12 @@ $(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
 $(WORK_DIR)/ram_wrapper/_primary.dat : $(SRC_DIR)/design/ram_wrapper.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
+$(WORK_DIR)/async_fifo/_primary.dat : $(SRC_DIR)/design/async_fifo.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/axi_cdc/_primary.dat : $(SRC_DIR)/design/axi_cdc.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
 $(WORK_DIR)/axi_master/_primary.dat : $(SRC_DIR)/design/axi_master.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
@@ -61,6 +71,12 @@ $(WORK_DIR)/axi_uartlite_0/_primary.dat : $(SRC_DIR)/design/axi_uartlite_0_sim_n
 	
 $(WORK_DIR)/axi_quad_spi_0/_primary.dat : $(SRC_DIR)/design/axi_quad_spi_0_sim_netlist.v
 	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/clk_wiz_0/_primary.dat : $(SRC_DIR)/design/clk_wiz_0_sim_netlist.v
+	vlog -quiet -work $(WORK_DIR) $<
 
+$(WORK_DIR)/mig_7series_0/_primary.dat : $(SRC_DIR)/design/mig_7series_0_sim_netlist.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
 $(WORK_DIR)/cpu_top/_primary.dat : $(SRC_DIR)/design/cpu_top.v
 	vlog -quiet -work $(WORK_DIR) $<
