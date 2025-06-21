@@ -1,16 +1,15 @@
 module cpu (
 	input  clk_i,
 	input  rst_i,
+	input  mem_ready_i,
 	output trap_o,
 
 	// Instruction memory IOs
-	input  instr_mem_ready_i,
 	input  [31:0] instr_mem_data_i,
 	output [31:0] instr_mem_addr_o,
 	output instr_mem_rd_o,
 
 	// Data memory IOs
-	input  data_mem_ready_i,
 	input  [31:0] data_mem_data_i,
 	output [31:0] data_mem_addr_o,
 	output [31:0] data_mem_data_o,
@@ -23,8 +22,6 @@ module cpu (
 /******************************************************************************
 * SIGNAL DECLARATIONS
 ******************************************************************************/
-wire mem_ready_s;
-
 /* ---------------------------------------------------
 * Related to Instruction Fetch (IF) Pipeline Section
 * --------------------------------------------------*/
@@ -100,18 +97,16 @@ reg mem_to_reg_wb_r, trap_wb_r;
 /******************************************************************************
 * BEGINNING OF IMPLEMENTATION
 ******************************************************************************/
-assign mem_ready_s = instr_mem_ready_i & data_mem_ready_i;
-
 /******************************************************************************
 * Instruction Fetch (IF) Pipeline Section
 ******************************************************************************/
 
 // Signal to reset in case of external reset or jumps
-assign rst_bubble_s = (mem_ready_s) ? ((~instr_addr_src_s) & rst_i) : 1'b1;
+assign rst_bubble_s = (mem_ready_i) ? ((~instr_addr_src_s) & rst_i) : 1'b1;
 
 // Flip-Flop to save the previous state of the reset signal
 always @(posedge clk_i) begin
-	if (mem_ready_s) begin
+	if (mem_ready_i) begin
 		rst_bubble_r <= rst_bubble_s;
 	end
 end
@@ -126,7 +121,7 @@ assign instr_addr_s = (instr_addr_src_s == 1'd0) ? next_instr_addr_s : jmp_addr_
 always @(posedge clk_i) begin
 	if(rst_i == 1'd0) begin
 		instr_addr_r <= 32'd0;	
-	end else if (mem_ready_s && hazard_nop_s==1'b0) begin
+	end else if (mem_ready_i && hazard_nop_s==1'b0) begin
 		instr_addr_r <= instr_addr_s;
 	end
 end
@@ -141,7 +136,7 @@ always @(posedge clk_i) begin
 	if (rst_i == 1'd0) begin
     	instr_addr_id_r <= 32'd0;
 		instr_id_r      <= 32'd0;
-	end else if (mem_ready_s && hazard_nop_s==1'b0) begin
+	end else if (mem_ready_i && hazard_nop_s==1'b0) begin
 		instr_addr_id_r <= instr_addr_r;
 		instr_id_r      <= instruction_s;
 	end
@@ -156,7 +151,7 @@ end
 register_file inst_register_file(
 	.clk_i(clk_i),
 	.rst_i(rst_i),
-	.stall_i(!mem_ready_s),
+	.stall_i(!mem_ready_i),
 	
 	.reg_write_i(reg_write_wb_r),
     .write_addr_i(rd_addr_wb_r),
@@ -222,7 +217,7 @@ end
 // ID-EX pipeline register
 always @(posedge clk_i) begin
 	if ((rst_bubble_s & rst_bubble_r & rst_i) == 1'd0 ||
-		(hazard_nop_s == 1'b1 && mem_ready_s == 1'b1)) begin
+		(hazard_nop_s == 1'b1 && mem_ready_i == 1'b1)) begin
 		inst_ex_r       <= 25'd0;
 		instr_addr_ex_r <= 32'd0;
 		rs1_data_ex_r   <= 32'd0;
@@ -238,7 +233,7 @@ always @(posedge clk_i) begin
 		alu_pc_ex_r     <= 1'd0;
 		branch_ex_r     <= 1'd0;
 		trap_ex_r       <= 1'd0;
-	end else if (mem_ready_s) begin
+	end else if (mem_ready_i) begin
 		inst_ex_r       <= instr_id_r[31:7];
 		instr_addr_ex_r <= instr_addr_id_r;
 		rs1_data_ex_r   <= rs1_data_s;
@@ -353,7 +348,7 @@ always @(posedge clk_i) begin
 		branch_mem_r     <= 1'd0;
 		funct_3_mem_r    <= 3'd0;
 		trap_mem_r       <= 1'd0;
-  	end else if (mem_ready_s) begin
+  	end else if (mem_ready_i) begin
 		alu_result_mem_r <= alu_result_s;
 		rs2_data_mem_r   <= rs2_data_sel_s;
 		mem_read_mem_r   <= mem_read_ex_r;
@@ -431,7 +426,7 @@ always @(posedge clk_i) begin
 		reg_write_wb_r  <= 1'd0;
 		mem_to_reg_wb_r <= 1'd0;
 		trap_wb_r       <= 1'd0;
-  	end else if (mem_ready_s) begin
+  	end else if (mem_ready_i) begin
 		data_mem_o_wb_r <= data_mem_o;
 		alu_result_wb_r <= alu_result_mem_r;
 		rd_addr_wb_r    <= rd_addr_mem_r;

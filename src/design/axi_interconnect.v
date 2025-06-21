@@ -28,6 +28,7 @@ module axi_interconnect #(
 		input  [N_MST-1:0] m_wvalid_i,
 		output reg [N_MST-1:0] m_wready_o,
 		input  [(32*N_MST)-1:0] m_wdata_i,
+		input  [(4*N_MST)-1:0] m_wstrb_i,
 
 		// Write Response (B) channel
 		output reg [N_MST-1:0] m_bvalid_o,
@@ -56,15 +57,13 @@ module axi_interconnect #(
 		output reg [N_SLV-1:0] s_wvalid_o,
 		input  [N_SLV-1:0] s_wready_i,
 		output [(32*N_SLV)-1:0] s_wdata_o,
+		output [(4*N_SLV)-1:0] s_wstrb_o,
 
 		// Write Response (B) channel
 		input  [N_SLV-1:0] s_bvalid_i,
 		output reg [N_SLV-1:0] s_bready_o,
 		input  [(2*N_SLV)-1:0] s_bresp_i
 );
-
-// Variables for for loops
-integer i, j;
 
 // Unpcked addresses for the slave interfaces
 wire [SLV_SEL_ADDR_BITS-1:0] SLV_ADDRESSES_UNPACKED [N_SLV-1:0];
@@ -75,6 +74,7 @@ reg  [31:0] m_rdata_o_unpacked  [N_MST-1:0];
 reg  [1:0]  m_rresp_o_unpacked  [N_MST-1:0];
 wire [31:0] m_awaddr_i_unpacked [N_MST-1:0];
 wire [31:0] m_wdata_i_unpacked  [N_MST-1:0];
+wire [3:0]  m_wstrb_i_unpacked  [N_MST-1:0];
 reg  [1:0]  m_bresp_o_unpacked  [N_MST-1:0];
 
 // Unpacked arrays of slave interfaces
@@ -83,6 +83,7 @@ wire [31:0] s_rdata_i_unpacked  [N_SLV-1:0];
 wire [1:0]  s_rresp_i_unpacked  [N_SLV-1:0];
 reg  [31:0] s_awaddr_o_unpacked [N_SLV-1:0];
 reg  [31:0] s_wdata_o_unpacked  [N_SLV-1:0];
+reg  [3:0]  s_wstrb_o_unpacked  [N_SLV-1:0];
 wire [1:0]  s_bresp_i_unpacked  [N_SLV-1:0];
 
 // Packing/Unpacking of master interfaces
@@ -93,6 +94,7 @@ generate
 		assign m_araddr_i_unpacked[mst_pck] = m_araddr_i[(mst_pck*32)+31:mst_pck*32];
 		assign m_awaddr_i_unpacked[mst_pck] = m_awaddr_i[(mst_pck*32)+31:mst_pck*32];
 		assign m_wdata_i_unpacked[mst_pck]  = m_wdata_i[(mst_pck*32)+31:mst_pck*32];
+		assign m_wstrb_i_unpacked[mst_pck]  = m_wstrb_i[(mst_pck*4)+3:mst_pck*4];
 		// Packing of outputs
 		assign m_rdata_o[(mst_pck*32)+31:mst_pck*32] = m_rdata_o_unpacked[mst_pck];
 		assign m_rresp_o[(mst_pck*2)+1:mst_pck*2]    = m_rresp_o_unpacked[mst_pck];
@@ -114,6 +116,7 @@ generate
 		assign s_araddr_o[(slv_pck*32)+31:slv_pck*32] = s_araddr_o_unpacked[slv_pck];
 		assign s_awaddr_o[(slv_pck*32)+31:slv_pck*32] = s_awaddr_o_unpacked[slv_pck];
 		assign s_wdata_o[(slv_pck*32)+31:slv_pck*32]  = s_wdata_o_unpacked[slv_pck];
+		assign s_wstrb_o[(slv_pck*4)+3:slv_pck*4]     = s_wstrb_o_unpacked[slv_pck];
 	end
 endgenerate
 
@@ -130,20 +133,21 @@ localparam WAIT_W  = 4'd5;
 localparam B_TR    = 4'd6;
 
 // Signals to indicate if a slave is busy
-reg [0:N_MST-1] slv_sel_s [N_SLV-1:0];
-reg [0:N_MST-1] slv_clr_s [N_SLV-1:0];
-reg [0:N_SLV-1] slv_busy_r;
+reg [N_MST-1:0] slv_sel_s [N_SLV-1:0];
+reg [N_MST-1:0] slv_clr_s [N_SLV-1:0];
+reg [N_SLV-1:0] slv_busy_r;
 
 // Register to store the slave selected by each master
-localparam WIDTH_SLV = $clog2(N_SLV);
+localparam WIDTH_SLV = ($clog2(N_SLV) == 0) ? 1 : $clog2(N_SLV);
 reg [WIDTH_SLV-1:0] selected_slv_r [N_MST-1:0];
 
 // Register to store wich master has selected a slave
-localparam WIDTH_MST = $clog2(N_MST);
+localparam WIDTH_MST = ($clog2(N_MST) == 0) ? 1 : $clog2(N_MST);
 reg [WIDTH_MST-1:0] selecting_mst_r [N_SLV-1:0];
 
 // Other registers
-always @(posedge clk_i) begin
+always @(posedge clk_i) begin : a_regs
+	integer i, j;
 	if(rst_i == 1'd0) begin
 		slv_busy_r <= 'b0;
 		for (i = 0; i < N_MST; i = i + 1) begin
@@ -158,8 +162,8 @@ always @(posedge clk_i) begin
 			for (j = 0; j < N_MST; j = j + 1) begin
 				if (slv_sel_s[i][j]) begin
 					slv_busy_r[i] <= 'b1;
-					selected_slv_r[j] <= i;
-					selecting_mst_r[i] <= j;
+					selected_slv_r[j] <= i[WIDTH_SLV-1:0];
+					selecting_mst_r[i] <= j[WIDTH_MST-1:0];
 				end else if (slv_clr_s[i][j]) begin
 					slv_busy_r[i] <= 'b0;
 					selected_slv_r[j] <= 'b0;
@@ -184,7 +188,8 @@ generate
 		end
 
 		// FSM next state calculation
-		always @(*) begin
+		always @(*) begin : a_mst_fsm
+			integer i;
 			// Default next state
 			next_state_s[mst_fsm] = current_state_r[mst_fsm];
 			// Do not select/clear any slave by default
@@ -325,6 +330,7 @@ generate
 			s_awaddr_o_unpacked[slv_idx] = 'd0;
 			s_wvalid_o[slv_idx] = 'd0;
 			s_wdata_o_unpacked[slv_idx] = 'd0;
+			s_wstrb_o_unpacked[slv_idx] = 'd0;
 			s_bready_o[slv_idx] = 'd0;
 
 			// Connect signals only when not in idle
@@ -336,6 +342,7 @@ generate
 				s_awaddr_o_unpacked[slv_idx] = m_awaddr_i_unpacked[selecting_mst_r[slv_idx]];
 				s_wvalid_o[slv_idx] = m_wvalid_i[selecting_mst_r[slv_idx]];
 				s_wdata_o_unpacked[slv_idx] = m_wdata_i_unpacked[selecting_mst_r[slv_idx]];
+				s_wstrb_o_unpacked[slv_idx] = m_wstrb_i_unpacked[selecting_mst_r[slv_idx]];
 				s_bready_o[slv_idx] = m_bready_i[selecting_mst_r[slv_idx]];
 			end
 		end

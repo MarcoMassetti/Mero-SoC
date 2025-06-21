@@ -24,7 +24,6 @@ wire        ddr3_odt_fpga;
 cpu_top DUT(
 	.clk_i(clk_i_s),
     .rst_i(rst_i_s),
-    .led_o(),
 	// UART
     .tx_o(),
     .rx_i(1'b1),
@@ -74,7 +73,7 @@ initial begin
 	rst_i_s <= 1'b1;
 end
 
-
+/*
 // DDR Model
 ddr3_model u_comp_ddr3
             (
@@ -95,5 +94,6 @@ ddr3_model u_comp_ddr3
              .tdqs_n  (),
              .odt     (ddr3_odt_fpga)
              );
+*/
 
 endmodule

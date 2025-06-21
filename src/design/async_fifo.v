@@ -100,8 +100,14 @@ end
 
 
 //// FIFO registers
+integer i;
 always @(posedge wr_clk_i) begin
-	if (wr_en_i & !full_o) begin
+	if (wr_rst_i==0 || rd_rst_i==0) begin
+		//Reset of all the registers
+        for (i=0; i<(DEPTH-1); i=i+1) begin
+            fifo_r[i] <= 'd0;
+        end
+	end else if (wr_en_i & !full_o) begin
 		fifo_r[wr_ptr_bin_r[PTR_WIDTH-1:0]] <= wr_data_i;
 	end
 end

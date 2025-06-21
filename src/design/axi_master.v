@@ -9,6 +9,7 @@ module axi_master(
 		input  [31:0] hs_data_i,
 		output hs_ready_o,
 		output [31:0] hs_data_o,
+		input [3:0] byte_select_i,
 		
 		//// AXI interface
 		// Read Address (AR) channel
@@ -31,16 +32,13 @@ module axi_master(
 		output reg wvalid_o,
 		input  wready_i,
 		output reg [31:0] wdata_o,
+		output reg [3:0] wstrb_o,
 
 		// Write Response (B) channel
 		input  bvalid_i,
 		output reg bready_o,
 		input  [1:0] bresp_i
 );
-
-// Signals for edge detectors to start new transactions
-reg hs_read_r, hs_write_r;
-wire new_hs_rd_req_s, new_hs_wr_req_s;
 
 // Signal to store data form axi interface
 reg rdata_reg_en_s;
@@ -55,22 +53,6 @@ localparam W_TR    = 4'd4;
 localparam WAIT_AW = 4'd5;
 localparam WAIT_W  = 4'd6;
 localparam B_TR    = 4'd7;
-
-
-// Register for hs interface edge detector
-always @(posedge clk_i) begin
-	if(rst_i == 1'd0) begin
-		hs_read_r  <= 'b0;
-		hs_write_r <= 'b0;
-	end else begin
-		hs_read_r  <= hs_read_i;
-		hs_write_r <= hs_write_i;
-	end
-end
-
-// Positive edge detectors for hs interface
-assign new_hs_rd_req_s = (hs_read_i && !hs_read_r);
-assign new_hs_wr_req_s = (hs_write_i && !hs_write_r);
 
 // FSM present state update
 always @(posedge clk_i) begin
@@ -89,10 +71,10 @@ always @(*) begin
  	case(current_state_r)
 		// Idle: wait for new request from hs interface
   		IDLE : begin
-			if (new_hs_rd_req_s) begin
+			if (hs_read_i) begin
 				// Start read transaction
 				next_state_s = AR_TR;
-			end else if (new_hs_wr_req_s) begin
+			end else if (hs_write_i) begin
 				// Start write transaction
 				next_state_s = W_TR;
 			end
@@ -160,6 +142,7 @@ always @(*) begin
 	awaddr_o   = 'b0;
 	wvalid_o   = 'b0;
 	wdata_o    = 'b0;
+	wstrb_o    = 'b0;
 	bready_o   = 'b0;
 
 	rdata_reg_en_s = 'b0;
@@ -188,6 +171,7 @@ always @(*) begin
 			
 			wvalid_o = 'b1;
 			wdata_o  = hs_data_i;
+			wstrb_o  = byte_select_i;
 		end
 
 		// Wait end of write address transfer
@@ -200,6 +184,7 @@ always @(*) begin
 		WAIT_W : begin
 			wvalid_o = 'b1;
 			wdata_o  = hs_data_i;
+			wstrb_o  = byte_select_i;
 		end
 
 		// Write response transfer
@@ -226,7 +211,7 @@ end
 //// Assign output values
 // Input hs interface ready when FSM is in idle and
 //   no new transaction is requested
-assign hs_ready_o = (current_state_r==IDLE && next_state_s==IDLE) ? 1'b1 : 1'b0;
+assign hs_ready_o = (next_state_s==IDLE) ? 1'b1 : 1'b0;
 
 // Only output is the data from read axi interface
 assign hs_data_o = rdata_reg_r;

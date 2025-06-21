@@ -11,18 +11,20 @@ analyze : \
 	$(WORK_DIR)/control_unit/_primary.dat \
 	$(WORK_DIR)/register_file/_primary.dat \
 	$(WORK_DIR)/cpu/_primary.dat \
-	$(WORK_DIR)/memory_arbiter/_primary.dat \
 	$(WORK_DIR)/ram/_primary.dat \
 	$(WORK_DIR)/ram_wrapper/_primary.dat \
+	$(WORK_DIR)/mmu/_primary.dat \
 	$(WORK_DIR)/async_fifo/_primary.dat \
 	$(WORK_DIR)/axi_cdc/_primary.dat \
 	$(WORK_DIR)/axi_master/_primary.dat \
+	$(WORK_DIR)/axi_slave/_primary.dat \
 	$(WORK_DIR)/axi_interconnect/_primary.dat \
 	$(WORK_DIR)/axi_uartlite_0/_primary.dat \
 	$(WORK_DIR)/axi_quad_spi_0/_primary.dat \
 	$(WORK_DIR)/clk_wiz_0/_primary.dat \
-	$(WORK_DIR)/mig_7series_0/_primary.dat \
 	$(WORK_DIR)/cpu_top/_primary.dat \
+#$(WORK_DIR)/memory_arbiter/_primary.dat \
+#$(WORK_DIR)/mig_7series_0/_primary.dat \
 
 $(WORK_DIR)/_info : 
 	vlib -type directory $(WORK_DIR)
@@ -45,7 +47,10 @@ $(WORK_DIR)/register_file/_primary.dat : $(SRC_DIR)/design/register_file.v
 $(WORK_DIR)/cpu/_primary.dat : $(SRC_DIR)/design/cpu.v
 	vlog -quiet -work $(WORK_DIR) $<
 
-$(WORK_DIR)/memory_arbiter/_primary.dat : $(SRC_DIR)/design/memory_arbiter.v
+#$(WORK_DIR)/memory_arbiter/_primary.dat : $(SRC_DIR)/design/memory_arbiter.v
+#	vlog -quiet -work $(WORK_DIR) $<
+	
+$(WORK_DIR)/mmu/_primary.dat : $(SRC_DIR)/design/mmu.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
@@ -63,6 +68,9 @@ $(WORK_DIR)/axi_cdc/_primary.dat : $(SRC_DIR)/design/axi_cdc.v
 $(WORK_DIR)/axi_master/_primary.dat : $(SRC_DIR)/design/axi_master.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
+$(WORK_DIR)/axi_slave/_primary.dat : $(SRC_DIR)/design/axi_slave.v
+	vlog -quiet -work $(WORK_DIR) $<
+	
 $(WORK_DIR)/axi_interconnect/_primary.dat : $(SRC_DIR)/design/axi_interconnect.v
 	vlog -quiet -work $(WORK_DIR) $<
 
@@ -75,8 +83,8 @@ $(WORK_DIR)/axi_quad_spi_0/_primary.dat : $(SRC_DIR)/design/axi_quad_spi_0_sim_n
 $(WORK_DIR)/clk_wiz_0/_primary.dat : $(SRC_DIR)/design/clk_wiz_0_sim_netlist.v
 	vlog -quiet -work $(WORK_DIR) $<
 
-$(WORK_DIR)/mig_7series_0/_primary.dat : $(SRC_DIR)/design/mig_7series_0_sim_netlist.v
-	vlog -quiet -work $(WORK_DIR) $<
+#$(WORK_DIR)/mig_7series_0/_primary.dat : $(SRC_DIR)/design/mig_7series_0_sim_netlist.v
+#	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/cpu_top/_primary.dat : $(SRC_DIR)/design/cpu_top.v
 	vlog -quiet -work $(WORK_DIR) $<
