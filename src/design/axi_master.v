@@ -7,8 +7,8 @@ module axi_master(
 		input  hs_write_i,
 		input  [31:0] hs_addr_i,
 		input  [31:0] hs_data_i,
-		output hs_ready_o,
-		output [31:0] hs_data_o,
+		output reg hs_ready_o,
+		output reg [31:0] hs_data_o,
 		input [3:0] byte_select_i,
 		
 		//// AXI interface
@@ -42,17 +42,17 @@ module axi_master(
 
 // Signal to store data form axi interface
 reg rdata_reg_en_s;
-reg [31:0] rdata_reg_r;
 
 // Signals and encoding for FSM status
 reg [3:0] current_state_r, next_state_s;
 localparam IDLE    = 4'd0;
 localparam AR_TR   = 4'd1;
 localparam R_TR    = 4'd2;
-localparam W_TR    = 4'd4;
-localparam WAIT_AW = 4'd5;
-localparam WAIT_W  = 4'd6;
-localparam B_TR    = 4'd7;
+localparam W_TR    = 4'd3;
+localparam WAIT_AW = 4'd4;
+localparam WAIT_W  = 4'd5;
+localparam B_TR    = 4'd6;
+localparam HS_ACK  = 4'd7;
 
 // FSM present state update
 always @(posedge clk_i) begin
@@ -90,7 +90,7 @@ always @(*) begin
 		// Read data transfer
 		R_TR : begin
 			if (rvalid_i) begin
-				next_state_s = IDLE;
+				next_state_s = HS_ACK;
 			end
 		end
 
@@ -123,8 +123,13 @@ always @(*) begin
 		// Write response transfer
 		B_TR : begin
 			if (bvalid_i) begin
-				next_state_s = IDLE;
+				next_state_s = HS_ACK;
 			end
+		end
+
+		// Send acknowledge to hs interface
+		HS_ACK : begin
+			next_state_s = IDLE;
 		end
         
         default : next_state_s = IDLE;
@@ -146,6 +151,7 @@ always @(*) begin
 	bready_o   = 'b0;
 
 	rdata_reg_en_s = 'b0;
+	hs_ready_o = 'b0;
 
 	case(current_state_r)
 		// Idle: wait for new request from hs interface
@@ -192,6 +198,11 @@ always @(*) begin
 			bready_o = 'b1;
 		end
         
+		// Send acknowledge to hs interface
+		HS_ACK : begin
+			hs_ready_o = 'b1;
+		end
+
         default : begin
 		end
 	endcase
@@ -200,20 +211,12 @@ end
 // Register to store data from axi interface
 always @(posedge clk_i) begin
 	if(rst_i == 1'd0) begin
-		rdata_reg_r <= 'b0;
+		hs_data_o <= 'b0;
 	end else begin
 		if (rdata_reg_en_s == 1'b1) begin
-			rdata_reg_r <= rdata_i;
+			hs_data_o <= rdata_i;
 		end
 	end
 end
-
-//// Assign output values
-// Input hs interface ready when FSM is in idle and
-//   no new transaction is requested
-assign hs_ready_o = (next_state_s==IDLE) ? 1'b1 : 1'b0;
-
-// Only output is the data from read axi interface
-assign hs_data_o = rdata_reg_r;
 
 endmodule

@@ -5,6 +5,7 @@ module cpu_top (
 	output tx_o,
 	input  rx_i,
 	// SPI
+	//output spi_sck_o,
 	output spi_cs_no,
 	output spi_mosi_o,
 	input  spi_miso_i,
@@ -30,17 +31,18 @@ module cpu_top (
     output ddr3_odt,
 	output init_calib_complete_o
 );
-
+wire spi_sck_o;
 // Signals between cpu and memory arbitrer
 // Intruction memory interface
-wire instr_mem_ready_s, instr_mem_rd_s;
-wire [31:0] instr_mem_data_s, instr_mem_addr_s;
+wire instr_mem_ready_s, instr_mem_rd_s, instr_mem_wr_s;
+wire [31:0] instr_mem_data_i_s, instr_mem_data_o_s, instr_mem_addr_s;
 // Data memory interface
 wire data_mem_ready_s, data_mem_rd_s, data_mem_wr_s;
 wire [31:0] data_mem_data_i_s, data_mem_addr_s, data_mem_data_o_s;
 wire [3:0]  data_mem_byte_select_s;
 
 wire mem_ready_s, cpu_instr_mem_rd_s, cpu_data_mem_rd_s, cpu_data_mem_wr_s;
+wire [31:0] cpu_instr_mem_data_s, cpu_instr_mem_addr_s;
 
 cpu inst_cpu(
 	.clk_i(clk_i),
@@ -48,8 +50,8 @@ cpu inst_cpu(
 	.mem_ready_i(mem_ready_s),
 	.trap_o(),
 	// Instruction memory IOs
-	.instr_mem_data_i(instr_mem_data_s),
-	.instr_mem_addr_o(instr_mem_addr_s),
+	.instr_mem_data_i(cpu_instr_mem_data_s),
+	.instr_mem_addr_o(cpu_instr_mem_addr_s),
 	.instr_mem_rd_o(cpu_instr_mem_rd_s),
 	// Data memory IOs
 	.data_mem_data_i(data_mem_data_i_s),
@@ -65,10 +67,18 @@ mmu inst_mmu(
 	.rst_i(rst_i),
 	// CPU stall signal
 	.mem_ready_o(mem_ready_s),
-	// Instruction memory IOs
+	//// Instruction memory IOs
+	// Towards CPU
 	.cpu_instr_mem_rd_i(cpu_instr_mem_rd_s),
-	.bus_instr_mem_rd_o(instr_mem_rd_s),
+	.cpu_instr_mem_addr_i(cpu_instr_mem_addr_s),
+	.cpu_instr_mem_data_o(cpu_instr_mem_data_s),
+	// Towards BUS
 	.bus_instr_mem_ready_i(instr_mem_ready_s),
+	.bus_instr_mem_rd_o(instr_mem_rd_s),
+	.bus_instr_mem_wr_o(instr_mem_wr_s),
+	.bus_instr_mem_addr_o(instr_mem_addr_s),
+	.bus_instr_mem_data_i(instr_mem_data_i_s),
+	.bus_instr_mem_data_o(instr_mem_data_o_s),
 	// Data memory IOs
 	.cpu_data_mem_rd_i(cpu_data_mem_rd_s),
 	.cpu_data_mem_wr_i(cpu_data_mem_wr_s),
@@ -218,12 +228,12 @@ axi_master inst_instr_mem_axi_master(
 	.rst_i(rst_i),
 	// Handshake interface
 	.hs_read_i(instr_mem_rd_s),
-	.hs_write_i(1'b0),
+	.hs_write_i(instr_mem_wr_s),
 	.hs_addr_i(instr_mem_addr_s),
-	.hs_data_i(32'd0),
+	.hs_data_i(instr_mem_data_o_s),
 	.hs_ready_o(instr_mem_ready_s),
-	.hs_data_o(instr_mem_data_s),
-	.byte_select_i(4'd0),
+	.hs_data_o(instr_mem_data_i_s),
+	.byte_select_i(4'd1),
 	//// AXI interface
 	// Read Address (AR) channel
 	.arvalid_o(instr_arvalid_s),
@@ -490,6 +500,30 @@ axi_uartlite_0 inst_uart (
   .tx(tx_o)                        // output wire tx
 );
 
+
+STARTUPE2 #(
+   .PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.
+   .SIM_CCLK_FREQ(0.0)  // Set the Configuration Clock Frequency(ns) for simulation.
+)
+STARTUPE2_inst (
+   .CFGCLK(),       // 1-bit output: Configuration main clock output
+   .CFGMCLK(),     // 1-bit output: Configuration internal oscillator clock output
+   .EOS(),             // 1-bit output: Active high output signal indicating the End Of Startup.
+   .PREQ(),           // 1-bit output: PROGRAM request to fabric output
+   .CLK(1'b0),             // 1-bit input: User start-up clock input
+   .GSR(1'b0),             // 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
+   .GTS(1'b0),             // 1-bit input: Global 3-state input (GTS cannot be used for the port name)
+   .KEYCLEARB(1'b0), // 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
+   .PACK(1'b0),           // 1-bit input: PROGRAM acknowledge input
+   .USRCCLKO(spi_sck_o),   // 1-bit input: User CCLK input
+                          // For Zynq-7000 devices, this input must be tied to GND
+   .USRCCLKTS(1'b0), // 1-bit input: User CCLK 3-state enable input
+                          // For Zynq-7000 devices, this input must be tied to VCC
+   .USRDONEO(1'b1),   // 1-bit input: User DONE pin output control
+   .USRDONETS(1'b1)  // 1-bit input: User DONE 3-state enable output
+);
+
+
 axi_quad_spi_0 inst_qspi (
   .ext_spi_clk(clk_i),      // input wire ext_spi_clk
   .s_axi_aclk(clk_i),        // input wire s_axi_aclk
@@ -517,13 +551,12 @@ axi_quad_spi_0 inst_qspi (
   .io1_i(spi_miso_i),                  // input wire io1_i
   .io1_o(),                  // output wire io1_o
   .io1_t(),                  // output wire io1_t
+  .sck_i(1'b0),
+  .sck_o(spi_sck_o),
+  .sck_t(),
   .ss_i(1'b0),                    // input wire [0 : 0] ss_i
   .ss_o(spi_cs_no),                    // output wire [0 : 0] ss_o
   .ss_t(),                    // output wire ss_t
-  .cfgclk(),                // output wire cfgclk
-  .cfgmclk(),              // output wire cfgmclk
-  .eos(),                      // output wire eos
-  .preq(),                    // output wire preq
   .ip2intc_irpt()    // output wire ip2intc_irpt
 );
 assign wp_no = 1'b1;
