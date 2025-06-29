@@ -45,6 +45,10 @@ reg [31:0] wdata_r, araddr_r, awaddr_r;
 reg [3:0] wstrb_r;
 reg wdata_reg_en_s, araddr_reg_en_s, awaddr_reg_en_s;
 
+// Register to store data from HS interface
+reg [31:0] rdata_r;
+reg rdata_reg_en_s;
+
 // Signals and encoding for FSM status
 reg [3:0] current_state_r, next_state_s;
 localparam IDLE       = 4'd0;
@@ -154,7 +158,7 @@ always @(*) begin
 	wdata_reg_en_s  = 1'b1;
 	araddr_reg_en_s = 1'b1;
 	awaddr_reg_en_s = 1'b1;
-
+	rdata_reg_en_s  = 1'b0;
 
 	case(current_state_r)
 		// Idle: wait for new request from hs interface
@@ -172,6 +176,7 @@ always @(*) begin
 			wdata_reg_en_s  = 1'b0;
 			araddr_reg_en_s = 1'b0;
 			awaddr_reg_en_s = 1'b0;
+			rdata_reg_en_s  = 1'b1;
 		end
 
 		// Read data transfer
@@ -247,8 +252,19 @@ always @(posedge clk_i) begin
 	end
 end
 
+// Register to store data from HS interface
+always @(posedge clk_i) begin
+	if(rst_i == 1'd0) begin
+		rdata_r <= 'd0;
+	end else begin
+		if (rdata_reg_en_s == 1'b1) begin
+			rdata_r <= hs_data_i;
+		end
+	end
+end
+
 //// Assign output values
-assign rdata_o = hs_data_i;
+assign rdata_o = rdata_r;
 assign rresp_o = 2'd0;
 assign bresp_o = 2'b0;
 assign hs_data_o = wdata_r;

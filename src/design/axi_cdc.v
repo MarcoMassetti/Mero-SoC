@@ -68,8 +68,7 @@ assign m_aready_o = (fifo_ar_empty_wr_s && !fifo_ar_empty_wr_r);
 // CDC fifo
 async_fifo  #(
 	.DEPTH(4),
-	.DATA_WIDTH(32),
-	.PTR_WIDTH(2)
+	.DATA_WIDTH(32)
 	)
 	inst_async_fifo_ar (	
 	// Write port
@@ -111,8 +110,7 @@ assign m_rdata_o = fifo_r_data_s[31:0];
 // CDC fifo
 async_fifo  #(
 	.DEPTH(4),
-	.DATA_WIDTH(32+2),
-	.PTR_WIDTH(2)
+	.DATA_WIDTH(32+2)
 	)
 	inst_async_fifo_r (	
 	// Write port
@@ -150,8 +148,7 @@ assign m_awready_o = (fifo_aw_empty_wr_s && !fifo_aw_empty_wr_r);
 // CDC fifo
 async_fifo  #(
 	.DEPTH(4),
-	.DATA_WIDTH(32),
-	.PTR_WIDTH(2)
+	.DATA_WIDTH(32)
 	)
 	inst_async_fifo_aw (	
 	// Write port
@@ -189,8 +186,7 @@ assign m_wready_o = (fifo_w_empty_wr_s && !fifo_w_empty_wr_r);
 // CDC fifo
 async_fifo  #(
 	.DEPTH(4),
-	.DATA_WIDTH(32),
-	.PTR_WIDTH(2)
+	.DATA_WIDTH(32)
 	)
 	inst_async_fifo_w (	
 	// Write port
@@ -228,8 +224,7 @@ assign s_bready_o = (fifo_b_empty_wr_s && !fifo_b_empty_wr_r);
 // CDC fifo
 async_fifo  #(
 	.DEPTH(4),
-	.DATA_WIDTH(2),
-	.PTR_WIDTH(2)
+	.DATA_WIDTH(2)
 	)
 	inst_async_fifo_b (	
 	// Write port

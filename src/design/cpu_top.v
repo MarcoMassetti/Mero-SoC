@@ -12,7 +12,8 @@ module cpu_top (
 	output wp_no,
 	output hold_no,
 	// PLL
-	output locked_o,
+	output locked_o
+	/*,
 	// DDR
 	output [13:0] ddr3_addr,
     output [2:0] ddr3_ba,
@@ -30,6 +31,7 @@ module cpu_top (
     output [1:0] ddr3_dm,
     output ddr3_odt,
 	output init_calib_complete_o
+	*/
 );
 wire spi_sck_o;
 // Signals between cpu and memory arbitrer
@@ -475,31 +477,36 @@ axi_interconnect  #(
 	.s_bresp_i(slv_bresp_s)
 );
 
-axi_uartlite_0 inst_uart (
-  .s_axi_aclk(clk_i),        // input wire s_axi_aclk
-  .s_axi_aresetn(rst_i),  // input wire s_axi_aresetn
-  .interrupt(),          // output wire interrupt
-  .s_axi_awaddr(uart_awaddr_s[3:0]),    // input wire [3 : 0] s_axi_awaddr
-  .s_axi_awvalid(uart_awvalid_s),  // input wire s_axi_awvalid
-  .s_axi_awready(uart_awready_s),  // output wire s_axi_awready
-  .s_axi_wdata(uart_wdata_s),      // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb({4{uart_wvalid_s}}),      // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid(uart_wvalid_s),    // input wire s_axi_wvalid
-  .s_axi_wready(uart_wready_s),    // output wire s_axi_wready
-  .s_axi_bresp(uart_bresp_s),      // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid(uart_bvalid_s),    // output wire s_axi_bvalid
-  .s_axi_bready(uart_bready_s),    // input wire s_axi_bready
-  .s_axi_araddr(uart_araddr_s[3:0]),    // input wire [3 : 0] s_axi_araddr
-  .s_axi_arvalid(uart_arvalid_s),  // input wire s_axi_arvalid
-  .s_axi_arready(uart_aready_s),  // output wire s_axi_arready
-  .s_axi_rdata(uart_rdata_s),      // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp(uart_rresp_s),      // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid(uart_rvalid_s),    // output wire s_axi_rvalid
-  .s_axi_rready(uart_rready_s),    // input wire s_axi_rready
-  .rx(rx_i),                        // input wire rx
-  .tx(tx_o)                        // output wire tx
+axi_uart inst_uart (
+	.clk_i(clk_i),
+	.rst_i(rst_i),
+	//// AXI interface
+	// Read Address (AR) channel
+	.arvalid_i(uart_arvalid_s),
+	.aready_o(uart_aready_s),
+	.araddr_i(uart_araddr_s),
+	// Read Data (R) channel
+	.rvalid_o(uart_rvalid_s),
+	.rready_i(uart_rready_s),
+	.rdata_o(uart_rdata_s),
+	.rresp_o(uart_rresp_s),
+	// Write Address (AW) channel
+	.awvalid_i(uart_awvalid_s),
+	.awready_o(uart_awready_s),
+	.awaddr_i(uart_awaddr_s),
+	// Write Data (W) channel
+	.wvalid_i(uart_wvalid_s),
+	.wready_o(uart_wready_s),
+	.wdata_i(uart_wdata_s),
+	.wstrb_i(uart_wstrb_s),
+	// Write Response (B) channel
+	.bvalid_o(uart_bvalid_s),
+	.bready_i(uart_bready_s),
+	.bresp_o(uart_bresp_s),
+	//// UART interface
+	.rx_i(rx_i),
+	.tx_o(tx_o)
 );
-
 
 STARTUPE2 #(
    .PROG_USR("FALSE"),  // Activate program event security feature. Requires encrypted bitstreams.

@@ -13,7 +13,7 @@ module mmu(
 	// Towards BUS
 	input  bus_instr_mem_ready_i,
 	output reg bus_instr_mem_rd_o,
-	output reg bus_instr_mem_wr_o,
+	output bus_instr_mem_wr_o,
 	output [31:0] bus_instr_mem_addr_o,
 	input  [31:0] bus_instr_mem_data_i,
 	output [31:0] bus_instr_mem_data_o,

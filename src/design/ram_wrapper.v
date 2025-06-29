@@ -11,11 +11,15 @@ module ram_wrapper(
 		output [31:0] data_o
 );
 
+reg mem_ready_r;
+
 always @(posedge clk_i) begin
 	if(rst_i == 1'd0) begin
+		mem_ready_r <= 1'd0;
 		mem_ready_o <= 1'd0;
 	end else begin
-		mem_ready_o <= (read_i || write_i);
+		mem_ready_r <= (read_i || write_i);
+		mem_ready_o <= mem_ready_r;
 	end
 end
 

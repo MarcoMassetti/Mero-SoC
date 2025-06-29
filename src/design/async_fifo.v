@@ -1,7 +1,6 @@
 module async_fifo #(
 		parameter DEPTH=8,
-		parameter DATA_WIDTH=8,
-		parameter PTR_WIDTH=3 // ($clog2(DEPTH))
+		parameter DATA_WIDTH=8
 		) (
 	// Write port
 	input wr_clk_i, 
@@ -20,13 +19,15 @@ module async_fifo #(
 	output not_empty_o
 );
 
+localparam PTR_WIDTH = $clog2(DEPTH);
+
 //// Double FF synchonizers for pointers
 reg [PTR_WIDTH:0] wr_ptr_sync_r [1:0];
 reg [PTR_WIDTH:0] rd_ptr_sync_r [1:0];
 
 //// Write pointer logic
 wire [PTR_WIDTH:0] wr_ptr_bin_s, wr_ptr_gray_s;
-reg [PTR_WIDTH:0] wr_ptr_bin_r, wr_ptr_gray_r;
+reg  [PTR_WIDTH:0] wr_ptr_bin_r, wr_ptr_gray_r;
 
 //// Read pointer logic
 wire [PTR_WIDTH:0] rd_ptr_bin_s;
@@ -102,9 +103,9 @@ end
 //// FIFO registers
 integer i;
 always @(posedge wr_clk_i) begin
-	if (wr_rst_i==0 || rd_rst_i==0) begin
+	if (wr_rst_i==1'b0 || rd_rst_i==1'b0) begin
 		//Reset of all the registers
-        for (i=0; i<(DEPTH-1); i=i+1) begin
+        for (i=0; i<DEPTH; i=i+1) begin
             fifo_r[i] <= 'd0;
         end
 	end else if (wr_en_i & !full_o) begin
