@@ -22,10 +22,10 @@ analyze : \
 	$(WORK_DIR)/axi_interconnect/_primary.dat \
 	$(WORK_DIR)/uart/_primary.dat \
 	$(WORK_DIR)/axi_uart/_primary.dat \
-	$(WORK_DIR)/axi_quad_spi_0/_primary.dat \
-	$(WORK_DIR)/clk_wiz_0/_primary.dat \
+	$(WORK_DIR)/spi_mst/_primary.dat \
+	$(WORK_DIR)/axi_spi_mst/_primary.dat \
 	$(WORK_DIR)/cpu_top/_primary.dat \
-#$(WORK_DIR)/memory_arbiter/_primary.dat \
+#$(WORK_DIR)/clk_wiz_0/_primary.dat \
 #$(WORK_DIR)/mig_7series_0/_primary.dat \
 
 $(WORK_DIR)/_info : 
@@ -48,9 +48,6 @@ $(WORK_DIR)/register_file/_primary.dat : $(SRC_DIR)/design/register_file.v
 
 $(WORK_DIR)/cpu/_primary.dat : $(SRC_DIR)/design/cpu.v
 	vlog -quiet -work $(WORK_DIR) $<
-
-#$(WORK_DIR)/memory_arbiter/_primary.dat : $(SRC_DIR)/design/memory_arbiter.v
-#	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/mmu/_primary.dat : $(SRC_DIR)/design/mmu.v
 	vlog -quiet -work $(WORK_DIR) $<
@@ -85,11 +82,14 @@ $(WORK_DIR)/uart/_primary.dat : $(SRC_DIR)/design/uart.v
 $(WORK_DIR)/axi_uart/_primary.dat : $(SRC_DIR)/design/axi_uart.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
-$(WORK_DIR)/axi_quad_spi_0/_primary.dat : $(SRC_DIR)/design/axi_quad_spi_0_sim_netlist.v
+$(WORK_DIR)/spi_mst/_primary.dat : $(SRC_DIR)/design/spi_mst.v
+	vlog -quiet -work $(WORK_DIR) $<
+
+$(WORK_DIR)/axi_spi_mst/_primary.dat : $(SRC_DIR)/design/axi_spi_mst.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
-$(WORK_DIR)/clk_wiz_0/_primary.dat : $(SRC_DIR)/design/clk_wiz_0_sim_netlist.v
-	vlog -quiet -work $(WORK_DIR) $<
+#$(WORK_DIR)/clk_wiz_0/_primary.dat : $(SRC_DIR)/design/clk_wiz_0_sim_netlist.v
+#	vlog -quiet -work $(WORK_DIR) $<
 
 #$(WORK_DIR)/mig_7series_0/_primary.dat : $(SRC_DIR)/design/mig_7series_0_sim_netlist.v
 #	vlog -quiet -work $(WORK_DIR) $<
