@@ -12,7 +12,7 @@ module mmu(
 	output [31:0] cpu_instr_mem_data_o,
 	// Towards BUS
 	input  bus_instr_mem_ready_i,
-	output reg bus_instr_mem_rd_o,
+	output bus_instr_mem_rd_o,
 	output bus_instr_mem_wr_o,
 	output [31:0] bus_instr_mem_addr_o,
 	input  [31:0] bus_instr_mem_data_i,
@@ -37,6 +37,10 @@ localparam WAIT_DATA  = 3'd2;
 localparam WAIT_INSTR = 3'd3;
 localparam HS_ACK     = 3'd4;
 
+// SPI boot controller signals
+reg  bus_instr_mem_rd_s;
+wire bus_instr_mem_ready_s;
+wire [31:0] bus_instr_mem_data_s;
 
 // FSM present state update
 always @(posedge clk_i) begin
@@ -56,14 +60,14 @@ always @(*) begin
 		// Wait for data memory access
 		IDLE : begin
 			if (cpu_data_mem_rd_i || cpu_data_mem_wr_i) begin
-				if (bus_instr_mem_ready_i && bus_data_mem_ready_i) begin
+				if (bus_instr_mem_ready_s && bus_data_mem_ready_i) begin
 					// If memories are immediatly ready stay in idle
 					//  and just forward CPU request
 					next_state_s = IDLE;
-				end else if (!bus_instr_mem_ready_i && !bus_data_mem_ready_i) begin
+				end else if (!bus_instr_mem_ready_s && !bus_data_mem_ready_i) begin
 					// If memories are not ready, must wait for both
 					next_state_s = WAIT_BOTH;
-				end else if (!bus_instr_mem_ready_i) begin
+				end else if (!bus_instr_mem_ready_s) begin
 					// If only instruction memory is not ready, wait for it
 					next_state_s = WAIT_INSTR;
 				end else if (!bus_data_mem_ready_i) begin
@@ -75,10 +79,10 @@ always @(*) begin
 		
 		// Wait for both memory transactions to finish
   		WAIT_BOTH : begin
-			if (bus_instr_mem_ready_i && bus_data_mem_ready_i) begin
+			if (bus_instr_mem_ready_s && bus_data_mem_ready_i) begin
 				// If both memories are ready return to idle
 				next_state_s = HS_ACK;
-			end else if (bus_instr_mem_ready_i) begin
+			end else if (bus_instr_mem_ready_s) begin
 				// If only instruction memory is ready, wait for data memory
 				next_state_s = WAIT_DATA;
 			end else if (bus_data_mem_ready_i) begin
@@ -96,7 +100,7 @@ always @(*) begin
 
 		// Wait for instruction memory transaction to finish
 		WAIT_INSTR : begin
-			if (bus_instr_mem_ready_i) begin
+			if (bus_instr_mem_ready_s) begin
 				next_state_s = HS_ACK;
 			end
 		end
@@ -113,7 +117,7 @@ end
 // FSM output calculation
 always @(*) begin
 	// Default output values
-	bus_instr_mem_rd_o = cpu_instr_mem_rd_i;
+	bus_instr_mem_rd_s = cpu_instr_mem_rd_i;
 	bus_data_mem_rd_o = cpu_data_mem_rd_i;
 	bus_data_mem_wr_o = cpu_data_mem_wr_i;
 	instr_reg_en_s = 1'b0;
@@ -132,7 +136,7 @@ always @(*) begin
 
 		// Wait for data memory transaction to finish
 		WAIT_DATA : begin
-			bus_instr_mem_rd_o = 1'b0;
+			bus_instr_mem_rd_s = 1'b0;
 			data_reg_en_s = 1'b1;
 		end
 
@@ -147,7 +151,7 @@ always @(*) begin
 		HS_ACK : begin
 			bus_data_mem_rd_o = 1'b0;
 			bus_data_mem_wr_o = 1'b0;
-			bus_instr_mem_rd_o = 1'b0;
+			bus_instr_mem_rd_s = 1'b0;
 		end
         
         default : begin
@@ -157,7 +161,7 @@ end
 
 always @(*) begin
 	if (next_state_s==IDLE && current_state_r==IDLE) begin
-		mem_ready_o = bus_instr_mem_ready_i;
+		mem_ready_o = bus_instr_mem_ready_s;
 	end else if (current_state_r==HS_ACK) begin
 		mem_ready_o = 1'b1;
 	end else begin
@@ -171,36 +175,22 @@ always @(posedge clk_i) begin
 		data_r <= 32'd0;
 	end else begin
 		if (instr_reg_en_s) begin
-			instr_r <= bus_instr_mem_data_i;
+			instr_r <= bus_instr_mem_data_s;
 		end
 	end
 end
 
-assign bus_instr_mem_wr_o = 1'b0;
-assign bus_instr_mem_data_o = 32'd0;
-assign bus_instr_mem_addr_o = cpu_instr_mem_addr_i;
-assign cpu_instr_mem_data_o = (current_state_r!=HS_ACK) ? bus_instr_mem_data_i : instr_r;
+assign cpu_instr_mem_data_o = (current_state_r!=HS_ACK) ? bus_instr_mem_data_s : instr_r;
 
-
-/*
-wire bus_instr_mem_ready_s, bus_instr_mem_rd_s;
-
-assign mem_ready_o = (next_state_s!=IDLE) ? 1'b0 : bus_instr_mem_ready_s;
-assign bus_instr_mem_rd_s = (current_state_r!=WAIT_DATA && next_state_s!=WAIT_DATA) ? cpu_instr_mem_rd_i : 1'b0;
-assign bus_data_mem_rd_o  = (current_state_r!=WAIT_INSTR && next_state_s!=WAIT_INSTR) ? cpu_data_mem_rd_i : 1'b0;
-assign bus_data_mem_wr_o  = (current_state_r!=WAIT_INSTR && next_state_s!=WAIT_INSTR) ? cpu_data_mem_wr_i : 1'b0;
-
-//// SECTION FOR SPI MEMORY BOOT
+// Controller to boot from external spi memory
 spi_boot_ctrl inst_spi_boot_ctrl (
 	.clk_i(clk_i),
 	.rst_i(rst_i),
-
 	// Handshake interface from CPU
 	.cpu_hs_read_i(bus_instr_mem_rd_s),
 	.cpu_hs_addr_i(cpu_instr_mem_addr_i),
 	.cpu_hs_ready_o(bus_instr_mem_ready_s),
-	.cpu_hs_data_o(cpu_instr_mem_data_o),
-	
+	.cpu_hs_data_o(bus_instr_mem_data_s),
 	// Handshake interface to interconnect
 	.bus_hs_ready_i(bus_instr_mem_ready_i),
 	.bus_hs_data_i(bus_instr_mem_data_i),
@@ -209,6 +199,5 @@ spi_boot_ctrl inst_spi_boot_ctrl (
 	.bus_hs_addr_o(bus_instr_mem_addr_o),
 	.bus_hs_data_o(bus_instr_mem_data_o)
 );
-*/
 
 endmodule
