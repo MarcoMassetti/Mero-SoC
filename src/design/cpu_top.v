@@ -182,22 +182,22 @@ wire [1:0] ddr_ref_bresp_s;
 
 //// QSPI AXI SIGNALS
 // Read Address (AR) channel
-wire qspi_arvalid_s, qspi_aready_s;
-wire [31:0] qspi_araddr_s;
+wire spi_arvalid_s, spi_aready_s;
+wire [31:0] spi_araddr_s;
 // Read Data (R) channel
-wire qspi_rvalid_s, qspi_rready_s;
-wire [31:0] qspi_rdata_s;
-wire [1:0] qspi_rresp_s;
+wire spi_rvalid_s, spi_rready_s;
+wire [31:0] spi_rdata_s;
+wire [1:0] spi_rresp_s;
 // Write Address (AW) channel
-wire qspi_awvalid_s, qspi_awready_s;
-wire [31:0] qspi_awaddr_s;
+wire spi_awvalid_s, spi_awready_s;
+wire [31:0] spi_awaddr_s;
 // Write Data (W) channel
-wire qspi_wvalid_s, qspi_wready_s;
-wire [31:0] qspi_wdata_s;
-wire [3:0] qspi_wstrb_s;
+wire spi_wvalid_s, spi_wready_s;
+wire [31:0] spi_wdata_s;
+wire [3:0] spi_wstrb_s;
 // Write Response (B) channel
-wire qspi_bvalid_s, qspi_bready_s;
-wire [1:0] qspi_bresp_s;
+wire spi_bvalid_s, spi_bready_s;
+wire [1:0] spi_bresp_s;
 
 //// RAM AXI SIGNALS
 // Read Address (AR) channel
@@ -344,6 +344,14 @@ assign data_bresp_s   = mst_bresp_s[(1*2)+1:1*2];
 
 //// Packed AXI slave interfaces
 localparam N_SLV = 4;
+localparam UART_BASE_ADDRESS  = 32'h40000;
+localparam UART_ADDRESS_SPACE = 32'hff;
+localparam SPI_BASE_ADDRESS   = 32'h60000;
+localparam SPI_ADDRESS_SPACE  = 32'hff;
+localparam DDR_BASE_ADDRESS   = 32'h80000;
+localparam DDR_ADDRESS_SPACE  = 32'hfffffff;
+localparam RAM_BASE_ADDRESS   = 32'h00000;
+localparam RAM_ADDRESS_SPACE  = 32'h2ffff;
 // Read Address (AR) channel
 wire [N_SLV-1:0] slv_arvalid_s, slv_aready_s;
 wire [(32*N_SLV)-1:0] slv_araddr_s;
@@ -365,59 +373,65 @@ wire [(2*N_SLV)-1:0] slv_bresp_s;
 //// Packing/Unpacking of slave interfaces
 // Read Address (AR) channel
 assign uart_arvalid_s = slv_arvalid_s[0];
-assign qspi_arvalid_s = slv_arvalid_s[1];
+assign spi_arvalid_s  = slv_arvalid_s[1];
 assign ddr_arvalid_s  = slv_arvalid_s[2];
 assign ram_arvalid_s  = slv_arvalid_s[3];
-assign slv_aready_s   = {ram_aready_s, ddr_aready_s, qspi_aready_s, uart_aready_s};
+assign slv_aready_s   = {ram_aready_s, ddr_aready_s, spi_aready_s, uart_aready_s};
 assign uart_araddr_s  = slv_araddr_s[(0*32)+31:0*32];
-assign qspi_araddr_s  = slv_araddr_s[(1*32)+31:1*32];
+assign spi_araddr_s   = slv_araddr_s[(1*32)+31:1*32];
 assign ddr_araddr_s   = slv_araddr_s[(2*32)+31:2*32];
 assign ram_araddr_s   = slv_araddr_s[(3*32)+31:3*32];
 // Read Data (R) channel
-assign slv_rvalid_s  = {ram_rvalid_s, ddr_rvalid_s, qspi_rvalid_s, uart_rvalid_s};
+assign slv_rvalid_s  = {ram_rvalid_s, ddr_rvalid_s, spi_rvalid_s, uart_rvalid_s};
 assign uart_rready_s = slv_rready_s[0];
-assign qspi_rready_s = slv_rready_s[1];
+assign spi_rready_s  = slv_rready_s[1];
 assign ddr_rready_s  = slv_rready_s[2];
 assign ram_rready_s  = slv_rready_s[3];
-assign slv_rdata_s   = {ram_rdata_s, ddr_rdata_s, qspi_rdata_s, uart_rdata_s};
-assign slv_rresp_s   = {ram_rresp_s, ddr_rresp_s, qspi_rresp_s, uart_rresp_s};
+assign slv_rdata_s   = {ram_rdata_s, ddr_rdata_s, spi_rdata_s, uart_rdata_s};
+assign slv_rresp_s   = {ram_rresp_s, ddr_rresp_s, spi_rresp_s, uart_rresp_s};
 // Write Address (AW) channel
 assign uart_awvalid_s = slv_awvalid_s[0];
-assign qspi_awvalid_s = slv_awvalid_s[1];
+assign spi_awvalid_s  = slv_awvalid_s[1];
 assign ddr_awvalid_s  = slv_awvalid_s[2];
 assign ram_awvalid_s  = slv_awvalid_s[3];
-assign slv_awready_s  = {ram_awready_s, ddr_awready_s, qspi_awready_s, uart_awready_s};
+assign slv_awready_s  = {ram_awready_s, ddr_awready_s, spi_awready_s, uart_awready_s};
 assign uart_awaddr_s  = slv_awaddr_s[(0*32)+31:0*32];
-assign qspi_awaddr_s  = slv_awaddr_s[(1*32)+31:1*32];
+assign spi_awaddr_s   = slv_awaddr_s[(1*32)+31:1*32];
 assign ddr_awaddr_s   = slv_awaddr_s[(2*32)+31:2*32];
 assign ram_awaddr_s   = slv_awaddr_s[(3*32)+31:3*32];
 // Write Data (W) channel
 assign uart_wvalid_s = slv_wvalid_s[0];
-assign qspi_wvalid_s = slv_wvalid_s[1];
+assign spi_wvalid_s  = slv_wvalid_s[1];
 assign ddr_wvalid_s  = slv_wvalid_s[2];
 assign ram_wvalid_s  = slv_wvalid_s[3];
-assign slv_wready_s  = {ram_wready_s, ddr_wready_s, qspi_wready_s, uart_wready_s};
+assign slv_wready_s  = {ram_wready_s, ddr_wready_s, spi_wready_s, uart_wready_s};
 assign uart_wdata_s  = slv_wdata_s[(0*32)+31:0*32];
-assign qspi_wdata_s  = slv_wdata_s[(1*32)+31:1*32];
+assign spi_wdata_s   = slv_wdata_s[(1*32)+31:1*32];
 assign ddr_wdata_s   = slv_wdata_s[(2*32)+31:2*32];
 assign ram_wdata_s   = slv_wdata_s[(3*32)+31:3*32];
 assign uart_wstrb_s  = slv_wstrb_s[(0*4)+3:0*4];
-assign qspi_wstrb_s  = slv_wstrb_s[(1*4)+3:1*4];
+assign spi_wstrb_s   = slv_wstrb_s[(1*4)+3:1*4];
 assign ddr_wstrb_s   = slv_wstrb_s[(2*4)+3:2*4];
 assign ram_wstrb_s   = slv_wstrb_s[(3*4)+3:3*4];
 // Write Response (B) channel
-assign slv_bvalid_s  = {ram_bvalid_s, ddr_bvalid_s, qspi_bvalid_s, uart_bvalid_s};
+assign slv_bvalid_s  = {ram_bvalid_s, ddr_bvalid_s, spi_bvalid_s, uart_bvalid_s};
 assign uart_bready_s = slv_bready_s[0];
-assign qspi_bready_s = slv_bready_s[1];
+assign spi_bready_s  = slv_bready_s[1];
 assign ddr_bready_s  = slv_bready_s[2];
 assign ram_bready_s  = slv_bready_s[3];
-assign slv_bresp_s   = {ram_bresp_s, ddr_bresp_s, qspi_bresp_s, uart_bresp_s};
+assign slv_bresp_s   = {ram_bresp_s, ddr_bresp_s, spi_bresp_s, uart_bresp_s};
 
 axi_interconnect  #(
 	.N_MST(N_MST),
 	.N_SLV(N_SLV),
-	.SLV_SEL_ADDR_BITS(15),
-	.SLV_ADDRESSES({15'd0, 15'd4, 15'd3, 15'd2})
+	.SLV_BASE_ADDRESSES({RAM_BASE_ADDRESS, 
+						DDR_BASE_ADDRESS, 
+						SPI_BASE_ADDRESS, 
+						UART_BASE_ADDRESS}),
+	.SLV_TOP_ADDRESSES( {RAM_BASE_ADDRESS+RAM_ADDRESS_SPACE, 
+						DDR_BASE_ADDRESS+DDR_ADDRESS_SPACE, 
+						SPI_BASE_ADDRESS+SPI_ADDRESS_SPACE, 
+						UART_BASE_ADDRESS+RAM_ADDRESS_SPACE})
 	)
 	inst_axi_interconnect (	
 	.clk_i(clk_i),
@@ -530,27 +544,27 @@ axi_spi_mst inst_spi_mst (
 	.rst_i(rst_i),
 	//// AXI interface
 	// Read Address (AR) channel
-	.arvalid_i(qspi_arvalid_s),
-	.aready_o(qspi_aready_s),
-	.araddr_i(qspi_araddr_s),
+	.arvalid_i(spi_arvalid_s),
+	.aready_o(spi_aready_s),
+	.araddr_i(spi_araddr_s),
 	// Read Data (R) channel
-	.rvalid_o(qspi_rvalid_s),
-	.rready_i(qspi_rready_s),
-	.rdata_o(qspi_rdata_s),
-	.rresp_o(qspi_rresp_s),
+	.rvalid_o(spi_rvalid_s),
+	.rready_i(spi_rready_s),
+	.rdata_o(spi_rdata_s),
+	.rresp_o(spi_rresp_s),
 	// Write Address (AW) channel
-	.awvalid_i(qspi_awvalid_s),
-	.awready_o(qspi_awready_s),
-	.awaddr_i(qspi_awaddr_s),
+	.awvalid_i(spi_awvalid_s),
+	.awready_o(spi_awready_s),
+	.awaddr_i(spi_awaddr_s),
 	// Write Data (W) channel
-	.wvalid_i(qspi_wvalid_s),
-	.wready_o(qspi_wready_s),
-	.wdata_i(qspi_wdata_s),
-	.wstrb_i(qspi_wstrb_s),
+	.wvalid_i(spi_wvalid_s),
+	.wready_o(spi_wready_s),
+	.wdata_i(spi_wdata_s),
+	.wstrb_i(spi_wstrb_s),
 	// Write Response (B) channel
-	.bvalid_o(qspi_bvalid_s),
-	.bready_i(qspi_bready_s),
-	.bresp_o(qspi_bresp_s),
+	.bvalid_o(spi_bvalid_s),
+	.bready_i(spi_bready_s),
+	.bresp_o(spi_bresp_s),
 	// SPI interface
 	.sck_o(spi_sck_o),
 	.cs_no(spi_cs_no),

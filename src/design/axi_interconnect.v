@@ -1,8 +1,8 @@
 module axi_interconnect #(
 		parameter N_MST = 1,
 		parameter N_SLV = 4,
-		parameter SLV_SEL_ADDR_BITS = 16,
-  		parameter [(SLV_SEL_ADDR_BITS*N_SLV)-1:0] SLV_ADDRESSES = 'd0
+  		parameter [(32*N_SLV)-1:0] SLV_BASE_ADDRESSES = 'd0,
+		parameter [(32*N_SLV)-1:0] SLV_TOP_ADDRESSES  = 'd0
 		) (	
 		input  clk_i,
 		input  rst_i,
@@ -66,7 +66,8 @@ module axi_interconnect #(
 );
 
 // Unpcked addresses for the slave interfaces
-wire [SLV_SEL_ADDR_BITS-1:0] SLV_ADDRESSES_UNPACKED [N_SLV-1:0];
+wire [31:0] SLV_BASE_ADDRESSES_UNPACKED [N_SLV-1:0];
+wire [31:0] SLV_TOP_ADDRESSES_UNPACKED  [N_SLV-1:0];
 
 // Unpacked arrays of master interfaces
 wire [31:0] m_araddr_i_unpacked [N_MST-1:0];
@@ -107,7 +108,8 @@ genvar slv_pck;
 generate
 	for (slv_pck = 0; slv_pck < N_SLV; slv_pck = slv_pck + 1) begin : gen_slv_pack
 		// Unpacking of addresses
-		assign SLV_ADDRESSES_UNPACKED[slv_pck] = SLV_ADDRESSES[(slv_pck*SLV_SEL_ADDR_BITS)+(SLV_SEL_ADDR_BITS-1):slv_pck*SLV_SEL_ADDR_BITS];
+		assign SLV_BASE_ADDRESSES_UNPACKED[slv_pck] = SLV_BASE_ADDRESSES[(slv_pck*32)+31:slv_pck*32];
+		assign SLV_TOP_ADDRESSES_UNPACKED[slv_pck]  = SLV_TOP_ADDRESSES[(slv_pck*32)+31:slv_pck*32];
 		// Unpacking of inputs
 		assign s_rdata_i_unpacked[slv_pck] = s_rdata_i[(slv_pck*32)+31:slv_pck*32];
 		assign s_rresp_i_unpacked[slv_pck] = s_rresp_i[(slv_pck*2)+1:slv_pck*2];
@@ -205,7 +207,7 @@ generate
 						// Master requesting read transaction
 						// Decode slave address
 						for (i = 0; i < N_SLV; i = i + 1) begin
-							if (m_araddr_i_unpacked[mst_fsm][31:(32-SLV_SEL_ADDR_BITS)] == SLV_ADDRESSES_UNPACKED[i]) begin
+							if (m_araddr_i_unpacked[mst_fsm] >= SLV_BASE_ADDRESSES_UNPACKED[i] && m_araddr_i_unpacked[mst_fsm] <= SLV_TOP_ADDRESSES_UNPACKED[i]) begin
 								// Check if slave is not busy and not selected by higher priority master
 								if (slv_busy_r[i] == 1'b0 && slv_sel_s[i][mst_fsm:0] == 'd0) begin
 									// Mark slave as busy
@@ -218,7 +220,7 @@ generate
 					end else if (m_awvalid_i[mst_fsm]) begin
 						// Master requesting write transaction
 						for (i = 0; i < N_SLV; i = i + 1) begin
-							if (m_awaddr_i_unpacked[mst_fsm][31:(32-SLV_SEL_ADDR_BITS)] == SLV_ADDRESSES_UNPACKED[i]) begin
+							if (m_awaddr_i_unpacked[mst_fsm] >= SLV_BASE_ADDRESSES_UNPACKED[i] && m_awaddr_i_unpacked[mst_fsm] <= SLV_TOP_ADDRESSES_UNPACKED[i]) begin
 								// Check if slave is not busy and not selected by higher priority master
 								if (slv_busy_r[i] == 1'b0 && slv_sel_s[i][mst_fsm:0] == 'd0) begin
 									// Mark slave as busy
