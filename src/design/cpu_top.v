@@ -86,10 +86,6 @@ mmu inst_mmu(
 	.bus_data_mem_ready_i(data_mem_ready_s)
 );
 
-wire ram_rd_en_s, ram_wr_en_s, ram_ready_s;
-wire [31:0] ram_addr_s, ram_data_o_s, ram_data_i_s;
-wire [3:0] ram_byte_select_s;
-
 //// INSTRUCTION MEMORY AXI SIGNALS
 // Read Address (AR) channel
 wire instr_arvalid_s, instr_aready_s;
@@ -564,7 +560,7 @@ axi_spi_mst inst_spi_mst (
 assign wp_no = 1'b1;
 assign hold_no = 1'b1;
 
-axi_slave inst_axi_slave (
+axi_ram_wrapper inst_ram_wrapper(	
 	.clk_i(clk_i),
 	.rst_i(rst_i),
 	//// AXI interface
@@ -589,27 +585,7 @@ axi_slave inst_axi_slave (
 	// Write Response (B) channel
 	.bvalid_o(ram_bvalid_s),
 	.bready_i(ram_bready_s),
-	.bresp_o(ram_bresp_s),
-	// Handshake interface
-	.hs_read_o(ram_rd_en_s),
-	.hs_write_o(ram_wr_en_s),
-	.hs_addr_o(ram_addr_s),
-	.hs_data_o(ram_data_o_s),
-	.hs_ready_i(ram_ready_s),
-	.hs_data_i(ram_data_i_s),
-	.byte_select_o(ram_byte_select_s)
-);
-
-ram_wrapper inst_ram_wrapper(	
-	.clk_i(clk_i),
-	.rst_i(rst_i),
-	.read_i(ram_rd_en_s),
-	.write_i(ram_wr_en_s),
-	.addr_i(ram_addr_s),
-	.data_i(ram_data_o_s),
-	.mem_ready_o(ram_ready_s),
-	.data_o(ram_data_i_s),
-	.byte_select_i(ram_byte_select_s)
+	.bresp_o(ram_bresp_s)
 );
 
 `ifdef DDR

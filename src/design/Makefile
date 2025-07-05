@@ -12,7 +12,7 @@ analyze : \
 	$(WORK_DIR)/register_file/_primary.dat \
 	$(WORK_DIR)/cpu/_primary.dat \
 	$(WORK_DIR)/ram/_primary.dat \
-	$(WORK_DIR)/ram_wrapper/_primary.dat \
+	$(WORK_DIR)/axi_ram_wrapper/_primary.dat \
 	$(WORK_DIR)/spi_boot_ctrl/_primary.dat \
 	$(WORK_DIR)/mmu/_primary.dat \
 	$(WORK_DIR)/async_fifo/_primary.dat \
@@ -59,7 +59,7 @@ $(WORK_DIR)/mmu/_primary.dat : $(SRC_DIR)/design/mmu.v
 $(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
-$(WORK_DIR)/ram_wrapper/_primary.dat : $(SRC_DIR)/design/ram_wrapper.v
+$(WORK_DIR)/axi_ram_wrapper/_primary.dat : $(SRC_DIR)/design/axi_ram_wrapper.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/async_fifo/_primary.dat : $(SRC_DIR)/design/async_fifo.v
