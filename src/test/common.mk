@@ -13,14 +13,14 @@ batch : analyze-xilinx analyze-design analyze-testbench $(OUTPUT_DIR)/$(SOURCE_F
 	cd $(OUTPUT_DIR) ; \
 	vmap unisims "$(OBJ_DIR)/unisims/" ; \
 	vmap glbl "$(OBJ_DIR)/glbl/" ; \
-	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt -g/cpu_top_tb/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME)_8.txt
 	
 # Start simulation in gui mode
 gui : analyze-xilinx analyze-design analyze-testbench $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	cd $(OUTPUT_DIR) ; \
 	vmap unisims "$(OBJ_DIR)/unisims/" ; \
 	vmap glbl "$(OBJ_DIR)/glbl/" ; \
-	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	vsim $(WORK_DIR).cpu_top_tb glbl.glbl -L unisims -L glbl -l tc.out -quiet -do $(TEST_DIR)/common_sim.tcl -g/cpu_top_tb/DUT/inst_ram_wrapper/inst_ram/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt -g/cpu_top_tb/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME)_8.txt
 	
 # Start simulation in batch mode and compare results with reference model
 batch_ref : golden batch

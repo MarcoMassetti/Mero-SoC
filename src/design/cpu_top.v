@@ -1,6 +1,9 @@
 module cpu_top (
 	input  clk_i,
 	input  rst_i,
+	// Boot source strapping pins
+	// 0:SPI, 1:SRAM, 2:DDR
+	input [1:0] boot_source_i,
 	// UART
 	output tx_o,
 	input  rx_i,
@@ -37,8 +40,8 @@ wire instr_mem_ready_s, instr_mem_rd_s, instr_mem_wr_s;
 wire [31:0] instr_mem_data_i_s, instr_mem_data_o_s, instr_mem_addr_s;
 // Data memory interface
 wire data_mem_ready_s, data_mem_rd_s, data_mem_wr_s;
-wire [31:0] data_mem_data_i_s, data_mem_addr_s, data_mem_data_o_s;
-wire [3:0]  data_mem_byte_select_s;
+wire [31:0] cpu_data_mem_data_i_s, data_mem_data_i_s, cpu_data_mem_addr_s, data_mem_addr_s, cpu_data_mem_data_o_s, data_mem_data_o_s;
+wire [3:0]  cpu_data_mem_byte_select_s, data_mem_byte_select_s;
 
 wire mem_ready_s, cpu_instr_mem_rd_s, cpu_data_mem_rd_s, cpu_data_mem_wr_s;
 wire [31:0] cpu_instr_mem_data_s, cpu_instr_mem_addr_s;
@@ -53,37 +56,12 @@ cpu inst_cpu(
 	.instr_mem_addr_o(cpu_instr_mem_addr_s),
 	.instr_mem_rd_o(cpu_instr_mem_rd_s),
 	// Data memory IOs
-	.data_mem_data_i(data_mem_data_i_s),
-	.data_mem_addr_o(data_mem_addr_s),
-	.data_mem_data_o(data_mem_data_o_s),
+	.data_mem_data_i(cpu_data_mem_data_i_s),
+	.data_mem_addr_o(cpu_data_mem_addr_s),
+	.data_mem_data_o(cpu_data_mem_data_o_s),
 	.data_mem_rd_o(cpu_data_mem_rd_s),
 	.data_mem_wr_o(cpu_data_mem_wr_s),
-	.byte_select_o(data_mem_byte_select_s)
-);
-
-mmu inst_mmu(	
-	.clk_i(clk_i),
-	.rst_i(rst_i),
-	// CPU stall signal
-	.mem_ready_o(mem_ready_s),
-	//// Instruction memory IOs
-	// Towards CPU
-	.cpu_instr_mem_rd_i(cpu_instr_mem_rd_s),
-	.cpu_instr_mem_addr_i(cpu_instr_mem_addr_s),
-	.cpu_instr_mem_data_o(cpu_instr_mem_data_s),
-	// Towards BUS
-	.bus_instr_mem_ready_i(instr_mem_ready_s),
-	.bus_instr_mem_rd_o(instr_mem_rd_s),
-	.bus_instr_mem_wr_o(instr_mem_wr_s),
-	.bus_instr_mem_addr_o(instr_mem_addr_s),
-	.bus_instr_mem_data_i(instr_mem_data_i_s),
-	.bus_instr_mem_data_o(instr_mem_data_o_s),
-	// Data memory IOs
-	.cpu_data_mem_rd_i(cpu_data_mem_rd_s),
-	.cpu_data_mem_wr_i(cpu_data_mem_wr_s),
-	.bus_data_mem_rd_o(data_mem_rd_s),
-	.bus_data_mem_wr_o(data_mem_wr_s),
-	.bus_data_mem_ready_i(data_mem_ready_s)
+	.byte_select_o(cpu_data_mem_byte_select_s)
 );
 
 //// INSTRUCTION MEMORY AXI SIGNALS
@@ -162,6 +140,7 @@ wire [3:0] ddr_wstrb_s;
 wire ddr_bvalid_s, ddr_bready_s;
 wire [1:0] ddr_bresp_s;
 
+`ifdef DDR
 //// DDR AXI SIGNALS (ref clock domain)
 // Read Address (AR) channel
 wire ddr_ref_arvalid_s, ddr_ref_aready_s;
@@ -179,8 +158,9 @@ wire [31:0] ddr_ref_wdata_s;
 // Write Response (B) channel
 wire ddr_ref_bvalid_s, ddr_ref_bready_s;
 wire [1:0] ddr_ref_bresp_s;
+`endif
 
-//// QSPI AXI SIGNALS
+//// SPI AXI SIGNALS
 // Read Address (AR) channel
 wire spi_arvalid_s, spi_aready_s;
 wire [31:0] spi_araddr_s;
@@ -217,6 +197,86 @@ wire [3:0] ram_wstrb_s;
 // Write Response (B) channel
 wire ram_bvalid_s, ram_bready_s;
 wire [1:0] ram_bresp_s;
+
+//// BOOT_CTRL AXI SIGNALS
+// Read Address (AR) channel
+wire boot_ctrl_arvalid_s, boot_ctrl_aready_s;
+wire [31:0] boot_ctrl_araddr_s;
+// Read Data (R) channel
+wire boot_ctrl_rvalid_s, boot_ctrl_rready_s;
+wire [31:0] boot_ctrl_rdata_s;
+wire [1:0] boot_ctrl_rresp_s;
+// Write Address (AW) channel
+wire boot_ctrl_awvalid_s, boot_ctrl_awready_s;
+wire [31:0] boot_ctrl_awaddr_s;
+// Write Data (W) channel
+wire boot_ctrl_wvalid_s, boot_ctrl_wready_s;
+wire [31:0] boot_ctrl_wdata_s;
+wire [3:0] boot_ctrl_wstrb_s;
+// Write Response (B) channel
+wire boot_ctrl_bvalid_s, boot_ctrl_bready_s;
+wire [1:0] boot_ctrl_bresp_s;
+
+cpu_interface_ctrl inst_cpu_interface_ctrl(	
+	.clk_i(clk_i),
+	.rst_i(rst_i),
+	// Boot source strapping pins
+	// 0:SPI, 1:SRAM, 2:DDR
+	.boot_source_i(boot_source_i),
+	//// AXI interface
+	// Read Address (AR) channel
+	.arvalid_i(boot_ctrl_arvalid_s),
+	.aready_o(boot_ctrl_aready_s),
+	.araddr_i(boot_ctrl_araddr_s),
+	// Read Data (R) channel
+	.rvalid_o(boot_ctrl_rvalid_s),
+	.rready_i(boot_ctrl_rready_s),
+	.rdata_o(boot_ctrl_rdata_s),
+	.rresp_o(boot_ctrl_rresp_s),
+	// Write Address (AW) channel
+	.awvalid_i(boot_ctrl_awvalid_s),
+	.awready_o(boot_ctrl_awready_s),
+	.awaddr_i(boot_ctrl_awaddr_s),
+	// Write Data (W) channel
+	.wvalid_i(boot_ctrl_wvalid_s),
+	.wready_o(boot_ctrl_wready_s),
+	.wdata_i(boot_ctrl_wdata_s),
+	.wstrb_i(boot_ctrl_wstrb_s),
+	// Write Response (B) channel
+	.bvalid_o(boot_ctrl_bvalid_s),
+	.bready_i(boot_ctrl_bready_s),
+	.bresp_o(boot_ctrl_bresp_s),
+	// CPU stall signal
+	.mem_ready_o(mem_ready_s),
+	//// Instruction memory IOs
+	// Towards CPU
+	.cpu_instr_mem_rd_i(cpu_instr_mem_rd_s),
+	.cpu_instr_mem_addr_i(cpu_instr_mem_addr_s),
+	.cpu_instr_mem_data_o(cpu_instr_mem_data_s),
+	// Towards BUS
+	.bus_instr_mem_ready_i(instr_mem_ready_s),
+	.bus_instr_mem_rd_o(instr_mem_rd_s),
+	.bus_instr_mem_wr_o(instr_mem_wr_s),
+	.bus_instr_mem_addr_o(instr_mem_addr_s),
+	.bus_instr_mem_data_i(instr_mem_data_i_s),
+	.bus_instr_mem_data_o(instr_mem_data_o_s),
+	// Data memory IOs
+	// Towards CPU
+	.cpu_data_mem_rd_i(cpu_data_mem_rd_s),
+	.cpu_data_mem_wr_i(cpu_data_mem_wr_s),
+	.cpu_data_mem_addr_i(cpu_data_mem_addr_s),
+	.cpu_data_mem_data_i(cpu_data_mem_data_o_s),
+	.cpu_data_mem_data_o(cpu_data_mem_data_i_s),
+	.cpu_byte_select_i(cpu_data_mem_byte_select_s),
+	// Towards BUS
+	.bus_data_mem_ready_i(data_mem_ready_s),
+	.bus_data_mem_rd_o(data_mem_rd_s),
+	.bus_data_mem_wr_o(data_mem_wr_s),
+	.bus_data_mem_addr_o(data_mem_addr_s),
+	.bus_data_mem_data_i(data_mem_data_i_s),
+	.bus_data_mem_data_o(data_mem_data_o_s),
+	.bus_byte_select_o(data_mem_byte_select_s)
+);
 
 axi_master inst_instr_mem_axi_master(	
 	.clk_i(clk_i),
@@ -343,15 +403,22 @@ assign instr_bresp_s  = mst_bresp_s[(0*2)+1:0*2];
 assign data_bresp_s   = mst_bresp_s[(1*2)+1:1*2];
 
 //// Packed AXI slave interfaces
-localparam N_SLV = 4;
+localparam N_SLV = 5;
+localparam UART_SLV_IDX       = 0;
 localparam UART_BASE_ADDRESS  = 32'h40000;
 localparam UART_ADDRESS_SPACE = 32'hff;
+localparam SPI_SLV_IDX        = 1;
 localparam SPI_BASE_ADDRESS   = 32'h60000;
 localparam SPI_ADDRESS_SPACE  = 32'hff;
-localparam DDR_BASE_ADDRESS   = 32'h80000;
-localparam DDR_ADDRESS_SPACE  = 32'hfffffff;
+localparam DDR_SLV_IDX        = 2;
+localparam DDR_BASE_ADDRESS   = 32'h10000000;
+localparam DDR_ADDRESS_SPACE  = 32'h0fffffff;
+localparam RAM_SLV_IDX        = 3;
 localparam RAM_BASE_ADDRESS   = 32'h00000;
 localparam RAM_ADDRESS_SPACE  = 32'h2ffff;
+localparam BOOT_CTRL_SLV_IDX       = 4;
+localparam BOOT_CTRL_BASE_ADDRESS  = 32'h30000;
+localparam BOOT_CTRL_ADDRESS_SPACE = 32'hff;
 // Read Address (AR) channel
 wire [N_SLV-1:0] slv_arvalid_s, slv_aready_s;
 wire [(32*N_SLV)-1:0] slv_araddr_s;
@@ -372,66 +439,77 @@ wire [(2*N_SLV)-1:0] slv_bresp_s;
 
 //// Packing/Unpacking of slave interfaces
 // Read Address (AR) channel
-assign uart_arvalid_s = slv_arvalid_s[0];
-assign spi_arvalid_s  = slv_arvalid_s[1];
-assign ddr_arvalid_s  = slv_arvalid_s[2];
-assign ram_arvalid_s  = slv_arvalid_s[3];
-assign slv_aready_s   = {ram_aready_s, ddr_aready_s, spi_aready_s, uart_aready_s};
-assign uart_araddr_s  = slv_araddr_s[(0*32)+31:0*32];
-assign spi_araddr_s   = slv_araddr_s[(1*32)+31:1*32];
-assign ddr_araddr_s   = slv_araddr_s[(2*32)+31:2*32];
-assign ram_araddr_s   = slv_araddr_s[(3*32)+31:3*32];
+assign uart_arvalid_s = slv_arvalid_s[UART_SLV_IDX];
+assign spi_arvalid_s  = slv_arvalid_s[SPI_SLV_IDX];
+assign ddr_arvalid_s  = slv_arvalid_s[DDR_SLV_IDX];
+assign ram_arvalid_s  = slv_arvalid_s[RAM_SLV_IDX];
+assign boot_ctrl_arvalid_s = slv_arvalid_s[BOOT_CTRL_SLV_IDX];
+assign slv_aready_s   = {boot_ctrl_aready_s, ram_aready_s, ddr_aready_s, spi_aready_s, uart_aready_s};
+assign uart_araddr_s  = slv_araddr_s[(UART_SLV_IDX*32)+31:UART_SLV_IDX*32];
+assign spi_araddr_s   = slv_araddr_s[(SPI_SLV_IDX*32)+31:SPI_SLV_IDX*32];
+assign ddr_araddr_s   = slv_araddr_s[(DDR_SLV_IDX*32)+31:DDR_SLV_IDX*32];
+assign ram_araddr_s   = slv_araddr_s[(RAM_SLV_IDX*32)+31:RAM_SLV_IDX*32];
+assign boot_ctrl_araddr_s = slv_araddr_s[(BOOT_CTRL_SLV_IDX*32)+31:BOOT_CTRL_SLV_IDX*32];
 // Read Data (R) channel
-assign slv_rvalid_s  = {ram_rvalid_s, ddr_rvalid_s, spi_rvalid_s, uart_rvalid_s};
-assign uart_rready_s = slv_rready_s[0];
-assign spi_rready_s  = slv_rready_s[1];
-assign ddr_rready_s  = slv_rready_s[2];
-assign ram_rready_s  = slv_rready_s[3];
-assign slv_rdata_s   = {ram_rdata_s, ddr_rdata_s, spi_rdata_s, uart_rdata_s};
-assign slv_rresp_s   = {ram_rresp_s, ddr_rresp_s, spi_rresp_s, uart_rresp_s};
+assign slv_rvalid_s  = {boot_ctrl_rvalid_s, ram_rvalid_s, ddr_rvalid_s, spi_rvalid_s, uart_rvalid_s};
+assign uart_rready_s = slv_rready_s[UART_SLV_IDX];
+assign spi_rready_s  = slv_rready_s[SPI_SLV_IDX];
+assign ddr_rready_s  = slv_rready_s[DDR_SLV_IDX];
+assign ram_rready_s  = slv_rready_s[RAM_SLV_IDX];
+assign boot_ctrl_rready_s = slv_rready_s[BOOT_CTRL_SLV_IDX];
+assign slv_rdata_s   = {boot_ctrl_rdata_s, ram_rdata_s, ddr_rdata_s, spi_rdata_s, uart_rdata_s};
+assign slv_rresp_s   = {boot_ctrl_rresp_s, ram_rresp_s, ddr_rresp_s, spi_rresp_s, uart_rresp_s};
 // Write Address (AW) channel
-assign uart_awvalid_s = slv_awvalid_s[0];
-assign spi_awvalid_s  = slv_awvalid_s[1];
-assign ddr_awvalid_s  = slv_awvalid_s[2];
-assign ram_awvalid_s  = slv_awvalid_s[3];
-assign slv_awready_s  = {ram_awready_s, ddr_awready_s, spi_awready_s, uart_awready_s};
-assign uart_awaddr_s  = slv_awaddr_s[(0*32)+31:0*32];
-assign spi_awaddr_s   = slv_awaddr_s[(1*32)+31:1*32];
-assign ddr_awaddr_s   = slv_awaddr_s[(2*32)+31:2*32];
-assign ram_awaddr_s   = slv_awaddr_s[(3*32)+31:3*32];
+assign uart_awvalid_s = slv_awvalid_s[UART_SLV_IDX];
+assign spi_awvalid_s  = slv_awvalid_s[SPI_SLV_IDX];
+assign ddr_awvalid_s  = slv_awvalid_s[DDR_SLV_IDX];
+assign ram_awvalid_s  = slv_awvalid_s[RAM_SLV_IDX];
+assign boot_ctrl_awvalid_s = slv_awvalid_s[BOOT_CTRL_SLV_IDX];
+assign slv_awready_s  = {boot_ctrl_awready_s, ram_awready_s, ddr_awready_s, spi_awready_s, uart_awready_s};
+assign uart_awaddr_s  = slv_awaddr_s[(UART_SLV_IDX*32)+31:UART_SLV_IDX*32];
+assign spi_awaddr_s   = slv_awaddr_s[(SPI_SLV_IDX*32)+31:SPI_SLV_IDX*32];
+assign ddr_awaddr_s   = slv_awaddr_s[(DDR_SLV_IDX*32)+31:DDR_SLV_IDX*32];
+assign ram_awaddr_s   = slv_awaddr_s[(RAM_SLV_IDX*32)+31:RAM_SLV_IDX*32];
+assign boot_ctrl_awaddr_s = slv_awaddr_s[(BOOT_CTRL_SLV_IDX*32)+31:BOOT_CTRL_SLV_IDX*32];
 // Write Data (W) channel
-assign uart_wvalid_s = slv_wvalid_s[0];
-assign spi_wvalid_s  = slv_wvalid_s[1];
-assign ddr_wvalid_s  = slv_wvalid_s[2];
-assign ram_wvalid_s  = slv_wvalid_s[3];
-assign slv_wready_s  = {ram_wready_s, ddr_wready_s, spi_wready_s, uart_wready_s};
-assign uart_wdata_s  = slv_wdata_s[(0*32)+31:0*32];
-assign spi_wdata_s   = slv_wdata_s[(1*32)+31:1*32];
-assign ddr_wdata_s   = slv_wdata_s[(2*32)+31:2*32];
-assign ram_wdata_s   = slv_wdata_s[(3*32)+31:3*32];
-assign uart_wstrb_s  = slv_wstrb_s[(0*4)+3:0*4];
-assign spi_wstrb_s   = slv_wstrb_s[(1*4)+3:1*4];
-assign ddr_wstrb_s   = slv_wstrb_s[(2*4)+3:2*4];
-assign ram_wstrb_s   = slv_wstrb_s[(3*4)+3:3*4];
+assign uart_wvalid_s = slv_wvalid_s[UART_SLV_IDX];
+assign spi_wvalid_s  = slv_wvalid_s[SPI_SLV_IDX];
+assign ddr_wvalid_s  = slv_wvalid_s[DDR_SLV_IDX];
+assign ram_wvalid_s  = slv_wvalid_s[RAM_SLV_IDX];
+assign boot_ctrl_wvalid_s = slv_wvalid_s[BOOT_CTRL_SLV_IDX];
+assign slv_wready_s  = {boot_ctrl_wready_s, ram_wready_s, ddr_wready_s, spi_wready_s, uart_wready_s};
+assign uart_wdata_s  = slv_wdata_s[(UART_SLV_IDX*32)+31:UART_SLV_IDX*32];
+assign spi_wdata_s   = slv_wdata_s[(SPI_SLV_IDX*32)+31:SPI_SLV_IDX*32];
+assign ddr_wdata_s   = slv_wdata_s[(DDR_SLV_IDX*32)+31:DDR_SLV_IDX*32];
+assign ram_wdata_s   = slv_wdata_s[(RAM_SLV_IDX*32)+31:RAM_SLV_IDX*32];
+assign boot_ctrl_wdata_s = slv_wdata_s[(BOOT_CTRL_SLV_IDX*32)+31:BOOT_CTRL_SLV_IDX*32];
+assign uart_wstrb_s  = slv_wstrb_s[(UART_SLV_IDX*4)+3:UART_SLV_IDX*4];
+assign spi_wstrb_s   = slv_wstrb_s[(SPI_SLV_IDX*4)+3:SPI_SLV_IDX*4];
+assign ddr_wstrb_s   = slv_wstrb_s[(DDR_SLV_IDX*4)+3:DDR_SLV_IDX*4];
+assign ram_wstrb_s   = slv_wstrb_s[(RAM_SLV_IDX*4)+3:RAM_SLV_IDX*4];
+assign boot_ctrl_wstrb_s = slv_wstrb_s[(BOOT_CTRL_SLV_IDX*4)+3:BOOT_CTRL_SLV_IDX*4];
 // Write Response (B) channel
-assign slv_bvalid_s  = {ram_bvalid_s, ddr_bvalid_s, spi_bvalid_s, uart_bvalid_s};
-assign uart_bready_s = slv_bready_s[0];
-assign spi_bready_s  = slv_bready_s[1];
-assign ddr_bready_s  = slv_bready_s[2];
-assign ram_bready_s  = slv_bready_s[3];
-assign slv_bresp_s   = {ram_bresp_s, ddr_bresp_s, spi_bresp_s, uart_bresp_s};
+assign slv_bvalid_s  = {boot_ctrl_bvalid_s, ram_bvalid_s, ddr_bvalid_s, spi_bvalid_s, uart_bvalid_s};
+assign uart_bready_s = slv_bready_s[UART_SLV_IDX];
+assign spi_bready_s  = slv_bready_s[SPI_SLV_IDX];
+assign ddr_bready_s  = slv_bready_s[DDR_SLV_IDX];
+assign ram_bready_s  = slv_bready_s[RAM_SLV_IDX];
+assign boot_ctrl_bready_s = slv_bready_s[BOOT_CTRL_SLV_IDX];
+assign slv_bresp_s   = {boot_ctrl_bresp_s, ram_bresp_s, ddr_bresp_s, spi_bresp_s, uart_bresp_s};
 
 axi_interconnect  #(
 	.N_MST(N_MST),
 	.N_SLV(N_SLV),
-	.SLV_BASE_ADDRESSES({RAM_BASE_ADDRESS, 
+	.SLV_BASE_ADDRESSES({BOOT_CTRL_BASE_ADDRESS,
+						RAM_BASE_ADDRESS, 
 						DDR_BASE_ADDRESS, 
 						SPI_BASE_ADDRESS, 
 						UART_BASE_ADDRESS}),
-	.SLV_TOP_ADDRESSES( {RAM_BASE_ADDRESS+RAM_ADDRESS_SPACE, 
+	.SLV_TOP_ADDRESSES( {BOOT_CTRL_BASE_ADDRESS+BOOT_CTRL_ADDRESS_SPACE, 
+						RAM_BASE_ADDRESS+RAM_ADDRESS_SPACE, 
 						DDR_BASE_ADDRESS+DDR_ADDRESS_SPACE, 
 						SPI_BASE_ADDRESS+SPI_ADDRESS_SPACE, 
-						UART_BASE_ADDRESS+RAM_ADDRESS_SPACE})
+						UART_BASE_ADDRESS+UART_ADDRESS_SPACE})
 	)
 	inst_axi_interconnect (	
 	.clk_i(clk_i),

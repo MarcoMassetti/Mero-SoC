@@ -14,7 +14,7 @@ analyze : \
 	$(WORK_DIR)/ram/_primary.dat \
 	$(WORK_DIR)/axi_ram_wrapper/_primary.dat \
 	$(WORK_DIR)/spi_boot_ctrl/_primary.dat \
-	$(WORK_DIR)/mmu/_primary.dat \
+	$(WORK_DIR)/cpu_interface_ctrl/_primary.dat \
 	$(WORK_DIR)/async_fifo/_primary.dat \
 	$(WORK_DIR)/sync_fifo/_primary.dat \
 	$(WORK_DIR)/axi_cdc/_primary.dat \
@@ -53,7 +53,7 @@ $(WORK_DIR)/cpu/_primary.dat : $(SRC_DIR)/design/cpu.v
 $(WORK_DIR)/spi_boot_ctrl/_primary.dat : $(SRC_DIR)/design/spi_boot_ctrl.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
-$(WORK_DIR)/mmu/_primary.dat : $(SRC_DIR)/design/mmu.v
+$(WORK_DIR)/cpu_interface_ctrl/_primary.dat : $(SRC_DIR)/design/cpu_interface_ctrl.v
 	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/ram/_primary.dat : $(SRC_DIR)/design/ram.v
