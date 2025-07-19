@@ -1,0 +1,73 @@
+{
+  "DESIGN_NAME": "chip_top",
+  "VERILOG_FILES": ["dir::../src/design/fifos/async_fifo.v", "dir::../src/design/fifos/sync_fifo.v",
+                    "dir::../src/design/axi_blocks/axi_2_hs.v", "dir::../src/design/axi_blocks/axi_cdc.v", "dir::../src/design/axi_blocks/axi_interconnect.v", "dir::../src/design/axi_blocks/axi_ram_wrapper.v","dir::../src/design/axi_blocks/hs_2_axi.v",
+                    "dir::../src/design/cpu/alu.v", "dir::../src/design/cpu/alu_control_unit.v", "dir::../src/design/cpu/byte_operation_unit.v", "dir::../src/design/cpu/control_unit.v", "dir::../src/design/cpu/cpu.v", "dir::../src/design/cpu/cpu_interface_ctrl.v", "dir::../src/design/cpu/axi_cpu_interface_ctrl.v", "dir::../src/design/cpu/register_file.v",
+                    "dir::../src/design/spi_ctrl/axi_spi_mst.v", "dir::../src/design/spi_ctrl/spi_boot_ctrl.v", "dir::../src/design/spi_ctrl/spi_mst.v",
+                    "dir::../src/design/uart_ctrl/axi_uart_ctrl.v", "dir::../src/design/uart_ctrl/uart_ctrl.v",
+                    "dir::../src/design/chip_top.v"],
+  
+  "//": "Define input clock",
+  "CLOCK_PERIOD": 9.34,
+  "CLOCK_PORT": "clk_i",
+  
+  "//": "Define core area",
+  "FP_SIZING": "absolute",
+  "DIE_AREA": "0 0 750 650",
+  
+  "//": "Use only typical corner",
+  "STA_CORNERS": "nom_tt_025C_1v80",
+  
+  "//": "SRAM macro",
+  "EXTRA_VERILOG_MODELS" : ["dir::../src/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8.v"],
+  "MACROS" : {
+    "sky130_sram_2kbyte_1rw_32x512_8": {
+      "instances": {
+        "inst_ram_wrapper.inst_ram": {
+          "location": [240, 30],
+          "orientation": "FS"
+        }
+      },
+      "gds": ["dir::../src/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8.gds"],
+      "lef": ["dir::../src/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8.lef"],
+      "lib": {
+        "nom_tt_025C_1v80" : "dir::../src/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8_TT_1p8V_25C.lib"
+      }
+    }
+  },
+  
+  "//": "Define and connect power nets to SRAM macro",
+  "VDD_NETS": "vccd1",
+  "GND_NETS": "vssd1",
+  "SYNTH_POWER_DEFINE": "USE_POWER_PINS",
+  "FP_PDN_MACRO_HOOKS": "inst_ram_wrapper.inst_ram vccd1 vssd1 vccd1 vssd1",
+  
+  "//": "Avoid some openram errors",
+  "ERROR_ON_DISCONNECTED_PINS" : false,
+  "FP_PDN_CHECK_NODES": false,
+  "MAGIC_LEF_WRITE_USE_GDS": true,
+  "MAGIC_CAPTURE_ERRORS": false,
+  "MAGIC_WRITE_LEF_PINONLY": true,
+  "MAGIC_DRC_USE_GDS": false,
+  "SYNTH_ABC_BUFFERING": true,
+  
+  "//": "Allow congestion during global routing",
+  "GRT_ALLOW_CONGESTION": true,  
+  
+  "//": "MAGIC_DEF_LABELS may cause issues with LVS",
+  "MAGIC_DEF_LABELS": false,
+  
+  "//": "Use alternative efabless decap cells to solve LI density issue",
+  "DECAP_CELL": [
+    "sky130_fd_sc_hd__decap_3",
+    "sky130_fd_sc_hd__decap_4",
+    "sky130_fd_sc_hd__decap_6",
+    "sky130_fd_sc_hd__decap_8",
+    "sky130_ef_sc_hd__decap_12"
+  ],
+  
+  "//": "Reach the end of the flow also in case of errors",
+  "QUIT_ON_MAGIC_DRC": false,
+  "QUIT_ON_KLAYOUT_DRC": false,
+  "QUIT_ON_LVS_ERROR" : false
+} 

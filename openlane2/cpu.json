@@ -1,0 +1,11 @@
+{
+  "DESIGN_NAME": "cpu",
+  "VERILOG_FILES": ["dir::../src/design/cpu/alu.v", "dir::../src/design/cpu/alu_control_unit.v", "dir::../src/design/cpu/byte_operation_unit.v", "dir::../src/design/cpu/control_unit.v", "dir::../src/design/cpu/cpu.v", "dir::../src/design/cpu/register_file.v"],
+  
+  "//": "Define input clock",
+  "CLOCK_PERIOD": 9.34,
+  "CLOCK_PORT": "clk_i",
+  
+  "//": "Use only typical corner",
+  "STA_CORNERS": "nom_tt_025C_1v80"
+} 

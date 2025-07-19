@@ -1,10 +1,2 @@
 runs/ 
 obj/
-*.json
-#*.bin
-#*.elf
-transcript
-sim/outputs
-sim/work
-vsim.wlf
-software.txt

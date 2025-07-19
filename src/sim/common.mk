@@ -54,7 +54,7 @@ $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin : $(SOURCE_FILE_NAME).c $(OUTPUT_DIR)
 	
 # Compile C code and produce binary file
 $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt : $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin
-	python3 $(TEST_DIR)/binary_conversion.py $< $@
+	python3 $(SRC_DIR)/scripts/binary_conversion.py $< $@
 
 # Creating simulation directory
 $(OUTPUT_DIR) : 

@@ -1,0 +1,4 @@
+Placeholder file, this needs to be filled with the content of the bynary to load into SRAM.
+
+A binary file can be converted into txt using the srcipt "./src/scripts/binary_conversion.py".
+The script must be executec provviding the path of the BIN file as first argument and the path for TXT file as second argument.

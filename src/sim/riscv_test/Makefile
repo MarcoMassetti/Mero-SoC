@@ -24,11 +24,11 @@ OUTPUT_DIR := $(subst $(SRC_DIR),$(OBJ_DIR),$(CURRENT_DIR))
 
 batch : analyze-design analyze-testbench golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	cd $(OUTPUT_DIR) ; \
-	vsim $(WORK_DIR).chip_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/chip_top_tb/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	vsim $(WORK_DIR).chip_top_tb -l tc.out -quiet -batch -do $(TEST_DIR)/common_sim.tcl -g/chip_top_tb/SRAM_FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 	
 gui : analyze-design analyze-testbench  golden $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
-	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).chip_top_tb -l tc.out -quiet        -do $(TEST_DIR)/common_sim.tcl -g/FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
+	cd $(OUTPUT_DIR) ; vsim $(WORK_DIR).chip_top_tb -l tc.out -quiet        -do $(TEST_DIR)/common_sim.tcl --g/chip_top_tb/SRAM_FILE_NAME=$(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt
 	
 	
 analyze-design :
@@ -49,7 +49,7 @@ $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin : ./S/$(SOURCE_FILE_NAME).S ./start.S ./S/
 	
 # Compile C code and produce binary file
 $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).txt : $(OUTPUT_DIR)/$(SOURCE_FILE_NAME).bin
-	python3 $(TEST_DIR)/binary_conversion.py $< $@
+	python3 $(SRC_DIR)/scripts/binary_conversion.py $< $@
 	
 $(OUTPUT_DIR) : 
 	mkdir -p $(OUTPUT_DIR)
