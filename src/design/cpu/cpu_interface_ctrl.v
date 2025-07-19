@@ -543,7 +543,7 @@ always @(*) begin
 		bus_instr_mem_addr_o = {15'd0, cpu_instr_mem_addr_i[16:0]};
 	end else begin
 		// Use address of external DDR
-		bus_instr_mem_addr_o = {4'd1, cpu_instr_mem_addr_i[27:0]};
+		bus_instr_mem_addr_o = {4'hf, cpu_instr_mem_addr_i[27:0]};
 	end 
 end
 
@@ -551,7 +551,7 @@ end
 // Data memory towards bus (from copy_fsm or from stall_fsm)
 // Add offset to memory where to copy code
 wire [31:0] copy_data_addr_s;
-assign copy_data_addr_s    = (copy_destination_s==1'd0) ? {15'd0, copy_word_addr_r[16:0]} : {4'd1, copy_word_addr_r[27:0]};
+assign copy_data_addr_s    = (copy_destination_s==1'd0) ? {15'd0, copy_word_addr_r[16:0]} : {4'hf, copy_word_addr_r[27:0]};
 assign bus_data_mem_addr_o = (copy_started_s) ? copy_data_addr_s   : cpu_data_mem_addr_i;
 assign bus_data_mem_data_o = (copy_started_s) ? instr_r            : cpu_data_mem_data_i;
 assign bus_data_mem_wr_o   = (copy_started_s) ? copy_data_mem_wr_s : stall_data_mem_wr_s;

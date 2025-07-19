@@ -6,17 +6,17 @@ ENTRY(_start)
 /* Define memories */
 MEMORY
 {
-   /* Code memory */
-   CODE (rx)   : ORIGIN = 0x00000000, LENGTH = 64k
-   /* Data memory */
-   DATA (rwx)  : ORIGIN = 0x00010000, LENGTH = 64k
+   /* Code memory (0x10000000 - 0x00ffffff) */
+   CODE (rx)   : ORIGIN = 0x00000000, LENGTH = 16M
+   /* Data memory (0xf0000000 - 0xffffffff) */
+   DATA (rwx)  : ORIGIN = 0xf0000000, LENGTH = 256M
 }
 
 /* Define sections */
 SECTIONS
 {
   /* Define stack pointer reset value (highest ram address) */
-  PROVIDE(__stack_top = 0x0001fff8);
+  PROVIDE(__stack_top = 0xfffffff8);
   
   /* Define .text section, containing all the executable code */
   .text : { *(.text .text.*) } > CODE
@@ -27,7 +27,7 @@ SECTIONS
   .sdata :
   {
     /* Define global pointer reset value (inside the sdata section) */
-    __global_pointer = . + 0x800; 
+    __global_pointer = . + 0x08000000; 
     *(.srodata .srodata*)
     *(.sdata .sdata*)
   } > DATA

@@ -252,19 +252,19 @@ assign data_bresp_s   = mst_bresp_s[(1*2)+1:1*2];
 //// Packed AXI slave interfaces
 localparam N_SLV = 5;
 localparam UART_SLV_IDX       = 0;
-localparam UART_BASE_ADDRESS  = 32'h40000;
+localparam UART_BASE_ADDRESS  = 32'h10100;
 localparam UART_ADDRESS_SPACE = 32'hff;
 localparam SPI_SLV_IDX        = 1;
-localparam SPI_BASE_ADDRESS   = 32'h60000;
+localparam SPI_BASE_ADDRESS   = 32'h10200;
 localparam SPI_ADDRESS_SPACE  = 32'hff;
 localparam DDR_SLV_IDX        = 2;
-localparam DDR_BASE_ADDRESS   = 32'h10000000;
+localparam DDR_BASE_ADDRESS   = 32'hf0000000;
 localparam DDR_ADDRESS_SPACE  = 32'h0fffffff;
 localparam RAM_SLV_IDX        = 3;
-localparam RAM_BASE_ADDRESS   = 32'h00000;
-localparam RAM_ADDRESS_SPACE  = 32'h2ffff;
+localparam RAM_BASE_ADDRESS   = 32'h0;
+localparam RAM_ADDRESS_SPACE  = 32'h7ff;
 localparam BOOT_CTRL_SLV_IDX       = 4;
-localparam BOOT_CTRL_BASE_ADDRESS  = 32'h30000;
+localparam BOOT_CTRL_BASE_ADDRESS  = 32'h10000;
 localparam BOOT_CTRL_ADDRESS_SPACE = 32'hff;
 // Read Address (AR) channel
 wire [N_SLV-1:0] slv_arvalid_s, slv_aready_s;

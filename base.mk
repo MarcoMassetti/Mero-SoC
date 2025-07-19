@@ -1,12 +1,9 @@
-# Top directory of the project
-#TOP_DIR=$(dir $(lastword $(MAKEFILE_LIST)))
-TOP_DIR=/media/marco/Shared/fpga/cpu
 # Source files directory
 SRC_DIR=$(TOP_DIR)/src
 # Build directory
 OBJ_DIR=$(TOP_DIR)/obj
 # Testcases base directory
-TEST_DIR=$(SRC_DIR)/test
+TEST_DIR=$(SRC_DIR)/sim
 # Silumator to use
 SIMULATOR=modelsim
 # Directory where to store compiled hardware
@@ -15,7 +12,7 @@ WORK_DIR=$(OBJ_DIR)/work
 # RISC-V architecture
 ARCH=riscv32-unknown-elf
 # Linker script path
-LINKER_SCRIPT=$(SRC_DIR)/firmware/linker_script.ld
+LINKER_SCRIPT=$(SRC_DIR)/firmware/linker_script_sram.ld
 # CRT0 file path
 CRT0=$(SRC_DIR)/firmware/crt0.s
 # GCC compilation options

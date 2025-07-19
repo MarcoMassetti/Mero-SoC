@@ -74,15 +74,15 @@ assign cnt_tc_s = (cnt_r == 3'd7) ? 1'b1 : 1'b0;
 
 // Signals and encoding for FSM status
 reg [4:0] current_state_r, next_state_s;
-localparam IDLE         = 5'd0;
-localparam SET_INHIBIT  = 5'd1;
-localparam FILL_TX_FIFO    = 5'd2;
-localparam WAIT_BUS_1   = 5'd3;
-localparam RESET_INHIBIT     = 5'd4;
-localparam WAIT_DATA    = 5'd5;
-localparam RECEIVE_DATA = 5'd6;
-localparam WAIT_BUS_2   = 5'd7;
-localparam SEND_TO_CPU  = 5'd8;
+localparam IDLE          = 5'd0;
+localparam SET_INHIBIT   = 5'd1;
+localparam FILL_TX_FIFO  = 5'd2;
+localparam WAIT_BUS_1    = 5'd3;
+localparam RESET_INHIBIT = 5'd4;
+localparam WAIT_DATA     = 5'd5;
+localparam RECEIVE_DATA  = 5'd6;
+localparam WAIT_BUS_2    = 5'd7;
+localparam SEND_TO_CPU   = 5'd8;
 
 // FSM present state update
 always @(posedge clk_i) begin
@@ -202,14 +202,14 @@ always @(*) begin
 		SET_INHIBIT : begin
 			cnt_clr_s     = 1'b1;
 			bus_hs_wr_o   = 1'b1;
-			bus_hs_addr_o = 32'h60000;
+			bus_hs_addr_o = 32'h10200;
 			bus_hs_data_o = 32'h4;
 		end
 
 		// Send 1 byte to SPI controller
 		FILL_TX_FIFO : begin
 			bus_hs_wr_o   = 1'b1;
-			bus_hs_addr_o = 32'h60008;
+			bus_hs_addr_o = 32'h10208;
 			bus_hs_data_o = {24'd0, shift_reg_r[7]};
 		end
 
@@ -219,7 +219,7 @@ always @(*) begin
 			cnt_en_s      = 1'b1;
 			shift_en_s    = 1'b1;
 			bus_hs_wr_o   = 1'b1;
-			bus_hs_addr_o = 32'h60008;
+			bus_hs_addr_o = 32'h10208;
 			bus_hs_data_o = {24'd0, shift_reg_r[7]};
 		end
 
@@ -227,20 +227,20 @@ always @(*) begin
 		RESET_INHIBIT : begin
 			cnt_clr_s     = 1'b1;
 			bus_hs_wr_o   = 1'b1;
-			bus_hs_addr_o = 32'h60060;
+			bus_hs_addr_o = 32'h10200;
 			bus_hs_data_o = 32'h0;
 		end
 
 		// Wait until RX fifo is filled with 8 bytes
 		WAIT_DATA : begin
 			bus_hs_rd_o   = 1'b1;
-			bus_hs_addr_o = 32'h60014;
+			bus_hs_addr_o = 32'h10214;
 		end
 		
 		// Get data from SPI controller
 		RECEIVE_DATA : begin
 			bus_hs_rd_o   = 1'b1;
-			bus_hs_addr_o = 32'h6000c;
+			bus_hs_addr_o = 32'h1020c;
 		end
 
 		// Wait acknowledge from bus
@@ -249,7 +249,7 @@ always @(*) begin
 			cnt_en_s      = 1'b1;
 			shift_en_s    = 1'b1;
 			bus_hs_rd_o   = 1'b1;
-			bus_hs_addr_o = 32'h6000c;
+			bus_hs_addr_o = 32'h1020c;
 		end
 
 		// Send intruction to the cpu
