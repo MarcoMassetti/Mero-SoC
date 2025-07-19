@@ -1,26 +1,25 @@
+# Find top directory of the project
+export TOP_DIR := $(shell \
+  d=$$(pwd); \
+  while [ "$$d" != "/" ] && [ ! -e "$$d/base.mk" ]; do \
+    d=$$(dirname "$$d"); \
+  done; \
+  if [ -n "$$d" ] && [ -e "$$d/base.mk" ]; then echo "$$d"; else echo "."; fi \
+)
+
 # Include makefile with base constants definitions
-include /media/marco/Shared/fpga/cpu/base.mk
+include $(TOP_DIR)/base.mk
 
 # Incremental compilation of all verilog files of the testbench
 analyze : \
 	$(OBJ_DIR) \
 	$(WORK_DIR)/_info \
-	$(WORK_DIR)/sst25vf016@b/_primary.dat \
-	$(WORK_DIR)/cpu_top_tb/_primary.dat \
-
-#$(WORK_DIR)/ddr3_model/_primary.dat \
+	$(WORK_DIR)/chip_top_tb/_primary.dat \
 
 $(WORK_DIR)/_info : 
 	vlib -type directory $(WORK_DIR)
-	
-$(WORK_DIR)/ddr3_model/_primary.dat : $(SRC_DIR)/testbench/ddr3_model.sv
-	vlog -sv -suppress 2083 -quiet -work $(WORK_DIR) $(SRC_DIR)/testbench/ddr3_model_parameters.vh
-	vlog -suppress 2083 -quiet -work $(WORK_DIR) $<
-	
-$(WORK_DIR)/sst25vf016@b/_primary.dat : $(SRC_DIR)/testbench/sst25vf016B.vp
-	vlog -quiet -work $(WORK_DIR) $<
 
-$(WORK_DIR)/cpu_top_tb/_primary.dat : $(SRC_DIR)/testbench/cpu_top_tb.v
+$(WORK_DIR)/chip_top_tb/_primary.dat : $(SRC_DIR)/testbench/chip_top_tb.v
 	vlog -quiet -work $(WORK_DIR) $<
 
 
