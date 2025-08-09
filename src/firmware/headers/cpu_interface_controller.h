@@ -1,0 +1,36 @@
+#ifndef CPU_INTERFACE_CONTROLLER_H
+#define CPU_INTERFACE_CONTROLLER_H
+
+// Include base addresses and macros
+#include "chip_top.h"
+
+// Register addresses
+#define CPU_INTERFACE_CONTROL_REGISTER REG_ADDR(CPU_INTERFACE_BASE_ADDR + 0x0)
+#define CPU_INTERFACE_STATUS_REGISTER  REG_ADDR(CPU_INTERFACE_BASE_ADDR + 0x4)
+#define CPU_INTERFACE_START_ADDRESS    REG_ADDR(CPU_INTERFACE_BASE_ADDR + 0x8)
+#define CPU_INTERFACE_STOP_ADDRESS     REG_ADDR(CPU_INTERFACE_BASE_ADDR + 0xC)
+
+//// CPU_INTERFACE_CONTROL_REGISTER
+// control_register fields masks
+#define CPU_INTERFACE_CONTROL_START_COPY_M (0x1)
+#define CPU_INTERFACE_CONTROL_DEST_M       (0x2)
+// control_register fields set
+#define CPU_INTERFACE_CONTROL_START_COPY_S(val) (val << 0)
+#define CPU_INTERFACE_CONTROL_DEST_S(val)       (val << 1)
+// control_register fields get
+#define CPU_INTERFACE_CONTROL_START_COPY_G(val) ((val & CPU_INTERFACE_CONTROL_START_COPY_M) >> 0)
+#define CPU_INTERFACE_CONTROL_DEST_G(val)       ((val & CPU_INTERFACE_CONTROL_DEST_M) >> 1)
+
+//// CPU_INTERFACE_STATUS_REGISTER
+// status_register fields masks
+#define CPU_INTERFACE_STATUS_EXECUTING_M   (0x1)
+#define CPU_INTERFACE_STATUS_BOOT_SOURCE_M (0x6)
+// status_register fields set
+#define CPU_INTERFACE_STATUS_EXECUTING_S(val)   (val << 0)
+#define CPU_INTERFACE_STATUS_BOOT_SOURCE_S(val) (val << 1)
+// status_register fields get
+#define CPU_INTERFACE_STATUS_EXECUTING_G(val)   ((val & CPU_INTERFACE_STATUS_EXECUTING_M) >> 0)
+#define CPU_INTERFACE_STATUS_BOOT_SOURCE_G(val) ((val & CPU_INTERFACE_STATUS_BOOT_SOURCE_M) >> 1)
+
+#endif // CPU_INTERFACE_CONTROLLER_H
+

@@ -1,25 +1,10 @@
-// SPI CTRL register
-volatile unsigned int *CTRL_REGISTER = (unsigned int*)0x60000;
-// SPI STAT register
-volatile unsigned int *STAT_REGISTER = (unsigned int*)0x60004;
-// SPI TX register
-volatile unsigned int *TX_REGISTER = (unsigned int*)0x60008;
-// SPI RX register
-volatile unsigned int *RX_REGISTER = (unsigned int*)0x6000c;
+#include "uart_controller.h"
+#include "spi_master.h"
 
+// Read 4-bytes at a time from SPI flash and print
+//  them on the UART terminal
 
-// UART RX register
-volatile unsigned int *UART_RX_REGISTER = (unsigned int*)0x40000;
-// UART TX register
-volatile unsigned int *UART_TX_REGISTER = (unsigned int*)0x40004;
-// UART status register
-volatile unsigned int *UART_STAT_REGISTER = (unsigned int*)0x40008;
-// UART clk_div low
-volatile unsigned int *UART_CLK_DIV_LH_REGISTER = (unsigned int*)0x40010;
-// UART clk_div high
-volatile unsigned int *UART_CLK_DIV_HI_REGISTER = (unsigned int*)0x40014;
-   
-
+// Function to convert a number (0-15) to its corresponding ascii character
 char hex_to_ascii(unsigned int hex) {
     if (hex < 10) {
         return '0' + hex;
@@ -28,22 +13,23 @@ char hex_to_ascii(unsigned int hex) {
     }
 }
 
+// Function to print a character to UART (waiting until UART fifo is not full)
 void print_uart(char chr) {
 	// Wait for space in uart fifo
-	while(*UART_STAT_REGISTER & 8);
-	*UART_TX_REGISTER = chr;
+	while(UART_STATUS_TX_FIFO_FULL_G(UART_STATUS_REGISTER));
+	UART_TX_FIFO_DATA = chr;
 }
 
 int main() {
-	volatile unsigned int addr;	
+	volatile unsigned int addr;
 	volatile unsigned int read_value;
 	
 	volatile unsigned int delay_cnt;
 	char i;
 	
 	// Baud rate 115200
-	*UART_CLK_DIV_LH_REGISTER = 0x64;
-	*UART_CLK_DIV_HI_REGISTER = 0x03;
+	UART_CLOCK_DIVIDER_LSB = 0x64;
+	UART_CLOCK_DIVIDER_MSB = 0x03;
 
 	// New line
 	print_uart('\r');
@@ -71,42 +57,42 @@ int main() {
 
 
 		// TX inhibit
-		*CTRL_REGISTER = 0x4;
+		SPI_MASTER_CONTROL_REGISTER = SPI_MASTER_CONTROL_TX_INHIBIT_M;
 		
 		// Read command
-		*TX_REGISTER = 0x03;
+		SPI_MASTER_TX_FIFO_DATA = 0x03;
 		// Addr
-		*TX_REGISTER = (addr >> 16) & 0xff;
-		*TX_REGISTER = (addr >> 8) & 0xff;
-		*TX_REGISTER = addr & 0xff;
+		SPI_MASTER_TX_FIFO_DATA = (addr >> 16) & 0xff;
+		SPI_MASTER_TX_FIFO_DATA = (addr >> 8) & 0xff;
+		SPI_MASTER_TX_FIFO_DATA = addr & 0xff;
 		
 		// 32bit data
-		*TX_REGISTER = 0;
-		*TX_REGISTER = 0;
-		*TX_REGISTER = 0;
-		*TX_REGISTER = 0;
+		SPI_MASTER_TX_FIFO_DATA = 0;
+		SPI_MASTER_TX_FIFO_DATA = 0;
+		SPI_MASTER_TX_FIFO_DATA = 0;
+		SPI_MASTER_TX_FIFO_DATA = 0;
 
 		// Release TX inhibit
-		*CTRL_REGISTER = 0x0;
+		SPI_MASTER_CONTROL_REGISTER = 0x0;
 		
 		// Increment flash address
 		addr += 4;
 		
 		// Wait until SPI fifo is empty
-		while((*STAT_REGISTER & 4)==0);
+		while((SPI_MASTER_STATUS_TX_FIFO_EMPTY_S(SPI_MASTER_STATUS_REGISTER))==0);
 		for(delay_cnt=0; delay_cnt<233; delay_cnt++);
 		
 		// Discard dummy bytes
-		read_value = *RX_REGISTER;
-		read_value = *RX_REGISTER;
-		read_value = *RX_REGISTER;
-		read_value = *RX_REGISTER;
+		read_value = SPI_MASTER_RX_FIFO_DATA;
+		read_value = SPI_MASTER_RX_FIFO_DATA;
+		read_value = SPI_MASTER_RX_FIFO_DATA;
+		read_value = SPI_MASTER_RX_FIFO_DATA;
 		
 		// Print flash content
 		print_uart('0');
 		print_uart('x');
 		for(i=0; i<4; i++) {
-			read_value = *RX_REGISTER;
+			read_value = SPI_MASTER_RX_FIFO_DATA;
 			print_uart(hex_to_ascii((read_value>>4)&0xf));
 			print_uart(hex_to_ascii(read_value & 0xf));
 		}
