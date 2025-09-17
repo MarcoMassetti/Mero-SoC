@@ -7,10 +7,18 @@ export TOP_DIR := $(shell \
   if [ -n "$$d" ] && [ -e "$$d/base.mk" ]; then echo "$$d"; else echo "."; fi \
 )
 
+
 # Include makefile with base constants definitions
 include $(TOP_DIR)/base.mk
 
+
+ifeq ($(SIMULATOR), questasim)
+#######################################################
+#############  Questasim specific targets  #############
+#######################################################
+
 # Incremental compilation of all verilog files of the design
+.PHONY: analyze
 analyze : \
 	$(OBJ_DIR) \
 	$(WORK_DIR)/_info \
@@ -65,7 +73,7 @@ $(WORK_DIR)/axi_cpu_interface_ctrl/_primary.dat : $(SRC_DIR)/design/cpu/axi_cpu_
 	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/sky130_sram_2kbyte_1rw_32x512_8/_primary.dat : $(SRC_DIR)/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8.v
-	vlog -quiet -work $(WORK_DIR) $< +define+FPGA
+	vlog -quiet -work $(WORK_DIR) $<
 	
 $(WORK_DIR)/async_fifo/_primary.dat : $(SRC_DIR)/design/fifos/async_fifo.v
 	vlog -quiet -work $(WORK_DIR) $<
@@ -105,3 +113,40 @@ $(WORK_DIR)/spi_boot_ctrl/_primary.dat : $(SRC_DIR)/design/spi_ctrl/spi_boot_ctr
 	
 $(WORK_DIR)/chip_top/_primary.dat : $(SRC_DIR)/design/chip_top.v
 	vlog -quiet -work $(WORK_DIR) $<
+
+
+else ifeq ($(SIMULATOR), icarus)
+#######################################################
+##############  Icarus specific targets  ##############
+#######################################################
+
+# Dependency on all verilog files of the design
+.PHONY: analyze
+analyze : $(SRC_DIR)/design/srclist.txt
+
+$(SRC_DIR)/design/srclist.txt: \
+	$(SRC_DIR)/design/cpu/alu_control_unit.v \
+	$(SRC_DIR)/design/cpu/alu.v \
+	$(SRC_DIR)/design/cpu/byte_operation_unit.v \
+	$(SRC_DIR)/design/cpu/control_unit.v \
+	$(SRC_DIR)/design/cpu/register_file.v \
+	$(SRC_DIR)/design/cpu/cpu.v \
+	$(SRC_DIR)/design/cpu/cpu_interface_ctrl.v \
+	$(SRC_DIR)/design/cpu/axi_cpu_interface_ctrl.v \
+	$(SRC_DIR)/design/ram_macro/sky130_sram_2kbyte_1rw_32x512_8.v \
+	$(SRC_DIR)/design/fifos/async_fifo.v \
+	$(SRC_DIR)/design/fifos/sync_fifo.v \
+	$(SRC_DIR)/design/axi_blocks/axi_ram_wrapper.v \
+	$(SRC_DIR)/design/axi_blocks/axi_cdc.v \
+	$(SRC_DIR)/design/axi_blocks/hs_2_axi.v \
+	$(SRC_DIR)/design/axi_blocks/axi_2_hs.v \
+	$(SRC_DIR)/design/axi_blocks/axi_interconnect.v \
+	$(SRC_DIR)/design/uart_ctrl/uart_ctrl.v \
+	$(SRC_DIR)/design/uart_ctrl/axi_uart_ctrl.v \
+	$(SRC_DIR)/design/spi_ctrl/spi_mst.v \
+	$(SRC_DIR)/design/spi_ctrl/axi_spi_mst.v \
+	$(SRC_DIR)/design/spi_ctrl/spi_boot_ctrl.v \
+	$(SRC_DIR)/design/chip_top.v
+	touch $(SRC_DIR)/design/srclist.txt
+
+endif

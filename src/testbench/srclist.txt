@@ -1,0 +1,1 @@
+$(SRC_DIR)/testbench/chip_top_tb.v

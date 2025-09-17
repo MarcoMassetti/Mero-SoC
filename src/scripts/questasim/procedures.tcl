@@ -1,6 +1,6 @@
 # Load binary file into testbench ram
 proc load_code {} {
-	set input_file "$::env(OBJ_DIR)/$::env(SOURCE_FILE_NAME).bin"
+	set input_file "$::env(OBJ_DIR)/$::env(TEST_NAME).bin"
 	set mem_path "sim:/chip_top_tb/DUT/inst_ram_wrapper/inst_ram/mem"
 
 	set cmd "change"
@@ -47,7 +47,7 @@ proc run_until_break {max_time} {
 
 # Print register file content
 proc report_rf {} {
-	set output_file "$::env(OUTPUT_DIR)/$::env(SOURCE_FILE_NAME)_rf_dut.txt"
+	set output_file "$::env(OUTPUT_DIR)/$::env(TEST_NAME)_rf_dut.txt"
 	set rf_path "sim:/chip_top_tb/DUT/inst_cpu/inst_register_file/registers"
 	
 	set fp [open $output_file w]  
@@ -67,7 +67,7 @@ proc report_rf {} {
 
 # Compare register file cotent with expected result
 proc compare_rf_content {} {
-	if {[catch {exec diff $::env(OUTPUT_DIR)/$::env(SOURCE_FILE_NAME)_rf_dut.txt $::env(OUTPUT_DIR)/$::env(SOURCE_FILE_NAME)_rf_golden.txt} fid]} {
+	if {[catch {exec diff $::env(OUTPUT_DIR)/$::env(TEST_NAME)_rf_dut.txt $::env(OUTPUT_DIR)/$::env(TEST_NAME)_rf_golden.txt} fid]} {
 		add message -noident -severity error "RF content differs\n$::errorInfo"
 	} else {
 		add message -noident -severity note "RF content matches"

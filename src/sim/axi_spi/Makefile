@@ -14,7 +14,13 @@ include $(TOP_DIR)/base.mk
 export CURRENT_DIR=$(shell pwd)
 
 # Name of the testcase
-export SOURCE_FILE_NAME=$(notdir $(shell pwd))
+export TEST_NAME=$(notdir $(shell pwd))
+
+# Source C files
+export SOURCE_FILES=$(TEST_NAME).c
 
 # Include makefile to start testcase
 include $(TEST_DIR)/common.mk
+
+# Simulation timeout
+export SIM_TIMEOUT_NS= 2000000

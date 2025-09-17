@@ -1,6 +1,6 @@
 
 # Mero-SoC
-**Simple SoC with 32bit RISC-V processor and some basic peripherals**
+**Simple SoC with a 32‑bit RISC‑V core and basic peripherals**
 
 <p align="center">
   <img src=".images/system.svg" width="600" />
@@ -22,7 +22,8 @@ The SoC has been implemented on a Spartan-7 Xilinx FPGA and in ASIC [SKY130](htt
 ## Usage
 **Prerequisites**
 - [RISC-V toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain/tree/master) to compile software
-- Modelsim or Questasim to simulate the hardware
+- [Icarus Verilog](https://github.com/steveicarus/iverilog) or QuestaSim to simulate the hardware
+- [GTKWave](https://github.com/gtkwave/gtkwave) to visualize Icarus simulations results
 - [Ripes](https://github.com/mortbopet/Ripes) simulator to validate the correct software execution
 
 Install the software and add the folders with the executables to the `PATH` environment variable.
@@ -39,7 +40,7 @@ Install the software and add the folders with the executables to the `PATH` envi
 The simulation flow will:
 - Check that the prerequisites are met
 - Create an `obj` directory under the top directory of the project, where all the auto-generated files will be stored
-- Compile all the design and testbench files
+- Compile all the design and testbench files (choosing between Icarus Verilog and QuestaSim can be done with the `SIMULATOR` variable in `base.mk` makefile)
 - Compile the C program
 - Execute the program using Ripes
 - Run the hardware simulation
@@ -50,19 +51,14 @@ The two simulations will stop automatically when the `ecall` instruction is exec
 By default, the code is compiled to use only the internal SRAM as code and data memory. Two others linker scripts are provided under `src/firmware/` to boot from external flash and use SRAM/DRAM as data memories. The desired linker script can be selected editing the makefile `base.mk`.
 
 **Other supported commands**  <br>
-Other `make` targets are available depending on the current working directory:
-- Under ./src/design or ./src/testbench directory
-    - `make analyze`: Incremental compilation of the design/testbench files
-- Under ./sim/<any_test> directory:
-    - `make gui_ref`: Run simulation opening the gui logging all the signals. Also run the Ripes simulation and compare the register file content at the end of the execution
-    - `make batch`: Run the simulation without opening the gui. Do not run Ripes
-    - `make gui`: Run simulation opening the gui logging all the signals. Do not run Ripes
-    - `make golden`: Generate the output of the Ripes simulation
-    - `make analyze-design`: Incremental compilation of the design files
-    - `make analyze-testbench`: Incremental compilation of the testbench files
-    - `make dump`: Print assembly of the executable file
-- Under any directory:
-    - `make clean`: Clean the entire object directory
+Other `make` targets are available under src/sim/<any_test> directory:
+- `make clean`: Clean the entire object directory
+- `make analyze`: Compile the design/testbench
+- `make batch_ref`: Run Ripes and hardware simulations, then compare the register-files content
+- `make batch`: Run the simulation without opening the gui. Do not run Ripes
+- `make gui`: Run simulation opening the gui and logging all the signals. Do not run Ripes
+- `make golden`: Generate the output of the Ripes simulation
+- `make dump`: Print assembly of the executable file
 
 
 ## Hardware modules

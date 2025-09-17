@@ -1,8 +1,8 @@
-`timescale  1ns/1ps
+`timescale  1ns/1ns
 
 module chip_top_tb ();
 
-parameter CLOCK = 10;
+localparam CLOCK = 10;
 reg clk_i_s, rst_i_s;
 
 `ifdef DDR
@@ -72,6 +72,7 @@ always begin
 	clk_i_s = ~clk_i_s;
 end
 
+
 initial begin
 	// Setting reset and initial clock value
 	rst_i_s <= 1'b0;
@@ -82,13 +83,65 @@ initial begin
 	rst_i_s <= 1'b1;
 end
 
-// Load software into memory
-parameter SRAM_FILE_NAME = "software.txt";
-defparam DUT.inst_ram_wrapper.inst_ram.FILE_NAME = SRAM_FILE_NAME;
-/*
-parameter FILE_NAME = "software.txt";
+
+// Parsing simulation arguments
+reg [0:1023] SRAM_FILE_NAME;
+reg [31:0] SIM_TIMEOUT_NS;
+reg VCD_ENABLE;
 initial begin
-	$readmemb(FILE_NAME, DUT.inst_ram_wrapper.inst_ram.mem);
+    // Load software into memory
+    if (!$value$plusargs("SRAM_FILE_NAME=%s", SRAM_FILE_NAME)) begin
+        $error("SRAM_FILE_NAME argument is not specified");
+        $finish;
+    end else begin
+	    $readmemb(SRAM_FILE_NAME, DUT.inst_ram_wrapper.inst_ram.mem);
+    end
+
+    // Save VCD file
+    if ($value$plusargs("VCD_ENABLE=%d", VCD_ENABLE) && VCD_ENABLE == 1'b1) begin
+        $dumpfile("dump.vcd");
+        $dumpvars(0, chip_top_tb);
+    end
+
+    // Simulation timeout value (in nanoseconds)
+    if (!$value$plusargs("SIM_TIMEOUT_NS=%d", SIM_TIMEOUT_NS) || SIM_TIMEOUT_NS==32'd0) begin
+        // Default value (1 ms)
+        SIM_TIMEOUT_NS = 1000000;
+    end
+
 end
-*/
+
+
+integer file;
+integer i;
+initial begin
+    // Wait until trap is asserted or until timeout
+    //while (((DUT.inst_cpu.trap_o !== 1'b1) || ((DUT.inst_cpu.inst_register_file.registers[17] !== 32'ha) && (DUT.inst_cpu.inst_register_file.registers[17] !== 32'h5d))) 
+    while (((DUT.inst_cpu.trap_o !== 1'b1) ) 
+			&& ($time < SIM_TIMEOUT_NS)
+		   ) begin
+        #10; 
+    end
+
+    // Check cause of simulation stop
+    if (DUT.inst_cpu.trap_o === 1'b1) begin
+        $display("Trap asserted at time  %d ns", $time);
+
+        // Print register file content
+        file = $fopen("register_file_dut.txt", "w");
+        if (file) begin
+            $fdisplay(file, "===== register values");
+            for (i = 0; i < 32; i=i+1) begin
+                $fdisplay(file, "x%0d:\t%0d\t(0x%08x)", i, $signed(DUT.inst_cpu.inst_register_file.registers[i]), DUT.inst_cpu.inst_register_file.registers[i]);
+            end
+            $fdisplay(file, "");
+            $fclose(file);
+        end
+        $finish;
+    end else begin
+        $warning("Simulation timed out at time %d ns", $time);
+        $finish;
+    end
+end
+
 endmodule

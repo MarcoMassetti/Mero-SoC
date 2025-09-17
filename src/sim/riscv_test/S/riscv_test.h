@@ -35,27 +35,11 @@ TEST_FUNC_NAME:				\
 
 #define RVTEST_PASS			\
 	lui	a0,0x00000600>>12;	\
-	addi	a1,zero,'O';		\
-	addi	a2,zero,'K';		\
-	addi	a3,zero,'\n';		\
-	sw	a1,0(a0);		\
-	sw	a2,0(a0);		\
-	sw	a3,0(a0);		\
 	li  a0, 0;           \
 	jal	zero,TEST_FUNC_RET;
 
 #define RVTEST_FAIL			\
 	lui	a0,0x00000600>>12;	\
-	addi	a1,zero,'E';		\
-	addi	a2,zero,'R';		\
-	addi	a3,zero,'O';		\
-	addi	a4,zero,'\n';		\
-	sw	a1,0(a0);		\
-	sw	a2,0(a0);		\
-	sw	a2,0(a0);		\
-	sw	a3,0(a0);		\
-	sw	a2,0(a0);		\
-	sw	a4,0(a0);		\
 	li  a0, 1;
 
 #define RVTEST_CODE_END
