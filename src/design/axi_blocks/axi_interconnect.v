@@ -180,6 +180,16 @@ end
 genvar mst_fsm;
 generate
 	for (mst_fsm = 0; mst_fsm < N_MST; mst_fsm = mst_fsm + 1) begin : gen_mst_fsm
+
+		// Calculating if another master with higher priority (lowest index) has selected a slave
+		reg [N_SLV-1:0] master_prio_s;
+		always @(*) begin : a_master_prio
+			integer i;
+			for (i = 0; i < N_SLV; i = i + 1) begin
+				master_prio_s[i] = ((slv_sel_s[i] & ((1<<mst_fsm)-1)) == 'd0) ? 1'b0 : 1'b1;
+			end
+		end
+
 		// FSM present state update
 		always @(posedge clk_i) begin
 			if(rst_ni == 1'd0) begin
@@ -209,7 +219,7 @@ generate
 						for (i = 0; i < N_SLV; i = i + 1) begin
 							if (m_araddr_i_unpacked[mst_fsm] >= SLV_BASE_ADDRESSES_UNPACKED[i] && m_araddr_i_unpacked[mst_fsm] <= SLV_TOP_ADDRESSES_UNPACKED[i]) begin
 								// Check if slave is not busy and not selected by higher priority master
-								if (slv_busy_r[i] == 1'b0 && slv_sel_s[i][mst_fsm:0] == 'd0) begin
+								if (slv_busy_r[i] == 1'b0 && master_prio_s[i] == 1'b0) begin
 									// Mark slave as busy
 									slv_sel_s[i][mst_fsm] = 1'b1;
 									// Start read transaction
@@ -222,7 +232,7 @@ generate
 						for (i = 0; i < N_SLV; i = i + 1) begin
 							if (m_awaddr_i_unpacked[mst_fsm] >= SLV_BASE_ADDRESSES_UNPACKED[i] && m_awaddr_i_unpacked[mst_fsm] <= SLV_TOP_ADDRESSES_UNPACKED[i]) begin
 								// Check if slave is not busy and not selected by higher priority master
-								if (slv_busy_r[i] == 1'b0 && slv_sel_s[i][mst_fsm:0] == 'd0) begin
+								if (slv_busy_r[i] == 1'b0 && master_prio_s[i] == 1'b0) begin
 									// Mark slave as busy
 									slv_sel_s[i][mst_fsm] = 1'b1;
 									// Start write transaction
@@ -253,11 +263,11 @@ generate
 				W_TR : begin
 					// Check if one or both transfers have ended
 					if (s_awready_i[selected_slv_r[mst_fsm]] && m_awvalid_i[mst_fsm] &&
-					    	s_awready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
+					    	s_wready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
 						next_state_s[mst_fsm] = B_TR;
 					end else if (s_awready_i[selected_slv_r[mst_fsm]] && m_awvalid_i[mst_fsm]) begin
 						next_state_s[mst_fsm] = WAIT_W;
-					end else if (s_awready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
+					end else if (s_wready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
 						next_state_s[mst_fsm] = WAIT_AW;
 					end
 				end
@@ -271,7 +281,7 @@ generate
 
 				// Wait end of write data transfer
 				WAIT_W : begin
-					if (s_awready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
+					if (s_wready_i[selected_slv_r[mst_fsm]] && m_wvalid_i[mst_fsm]) begin
 						next_state_s[mst_fsm] = B_TR;
 					end
 				end
